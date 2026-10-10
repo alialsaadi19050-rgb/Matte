@@ -12,10 +12,20 @@ import { updateSettings, useSettings } from '../settings/settings.ts'
 
 const MAX_TRIES = 3
 
-function playChime(kind: 'correct' | 'wrong') {
+/**
+ * Rätt-ljudet går ner i tonhöjd ju fler försök som behövdes:
+ * första försöket A5→E6 (kvint upp), andra E5→A5 (kvart upp), tredje eller senare C5→E5 (ters upp).
+ */
+const CORRECT_NOTES = [
+  [880, 1318.5],
+  [659.3, 880],
+  [523.3, 659.3],
+]
+
+function playChime(kind: 'correct' | 'wrong', missesBefore = 0) {
   try {
     const ctx = new AudioContext()
-    const notes = kind === 'correct' ? [880, 1318.5] : [220]
+    const notes = kind === 'correct' ? CORRECT_NOTES[Math.min(missesBefore, CORRECT_NOTES.length - 1)] : [220]
     notes.forEach((f, i) => {
       const o = ctx.createOscillator()
       const g = ctx.createGain()
@@ -57,6 +67,8 @@ export function AnswerPanel({ ex, panelRef, next, onRedo, redoLabel }: { ex: Exe
   const [solved, setSolved] = useState<Set<number>>(new Set())
   const [confirmRedo, setConfirmRedo] = useState(false)
   const [pastWrong, setPastWrong] = useState(0)
+  /** Du har svarat under det här besöket. */
+  const [active, setActive] = useState(false)
 
   useEffect(() => {
     attemptsFor(ex.id).then((all) => {
@@ -74,7 +86,7 @@ export function AnswerPanel({ ex, panelRef, next, onRedo, redoLabel }: { ex: Exe
         <span>
           {solved.size} av {ex.parts.length} klara
         </span>
-        {onRedo && history && (history.length > 0 || pastWrong > 0) && (
+        {onRedo && history && (history.length > 0 || pastWrong > 0 || active) && (
           <button className="ex-redo" onClick={() => setConfirmRedo((c) => !c)} aria-expanded={confirmRedo} title="Börja om uppgiften från början">
             ↺ Gör om
           </button>
@@ -109,6 +121,7 @@ export function AnswerPanel({ ex, panelRef, next, onRedo, redoLabel }: { ex: Exe
             part={p}
             previous={history.filter((a) => a.part === i)}
             onSolved={() => setSolved((s) => new Set(s).add(i))}
+            onAttempt={() => setActive(true)}
           />
         ))}
       <div className="ex-answer-foot">
@@ -129,7 +142,7 @@ type Feedback = { status: CheckStatus | 'info'; message: string; hint?: string; 
 
 const PRAISE = ['Snyggt!', 'Precis rätt.', 'Klockrent.', 'Helt rätt!', 'Bra jobbat!']
 
-function AnswerField({ ex, index, part, previous, onSolved }: { ex: Exercise; index: number; part: Part; previous: Attempt[]; onSolved: () => void }) {
+function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: Exercise; index: number; part: Part; previous: Attempt[]; onSolved: () => void; onAttempt: () => void }) {
   const settings = useSettings()
   const kind = inputKind(part.answer)
   const lastCorrect = previous.findLast((a) => a.status === 'correct')
@@ -158,6 +171,7 @@ function AnswerField({ ex, index, part, previous, onSolved }: { ex: Exercise; in
 
   const save = (status: 'correct' | 'partial' | 'incorrect', input: string, self = false) => {
     setLog((l) => [...l, { input, status }])
+    onAttempt()
     return recordAttempt({ exerciseId: ex.id, part: index, label: part.label, input, status, self, hintUsed: showHint })
   }
 
@@ -165,7 +179,7 @@ function AnswerField({ ex, index, part, previous, onSolved }: { ex: Exercise; in
     setSolvedInput(input)
     setFeedback({ status: 'correct', message, key: Date.now() })
     onSolved()
-    if (settings.sound) playChime('correct')
+    if (settings.sound) playChime('correct', tries)
   }
 
   const submit = (raw?: string) => {
