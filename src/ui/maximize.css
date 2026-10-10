@@ -1,0 +1,53 @@
+.max-btn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(var(--fg-rgb), 0.07);
+  color: var(--text-dim);
+}
+.max-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.max-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(var(--scrim-rgb), 0.6);
+  backdrop-filter: blur(6px);
+  animation: max-fade 0.2s ease-out;
+}
+@keyframes max-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Den förstorade rutan: mitt på skärmen, upp till 860 px bred, med större text. */
+.is-max {
+  position: fixed !important;
+  z-index: 91;
+  top: max(16px, 5vh);
+  bottom: max(16px, 5vh);
+  left: max(16px, calc(50vw - 430px));
+  right: max(16px, calc(50vw - 430px));
+  margin: 0 !important;
+  overflow: auto;
+  border-radius: 20px !important;
+  background: var(--bg-raised) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--fg-rgb), 0.12), 0 40px 100px -20px rgb(0 0 0 / calc(0.8 * var(--shadow-k))) !important;
+  font-size: 17px !important;
+  animation: max-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+@keyframes max-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}

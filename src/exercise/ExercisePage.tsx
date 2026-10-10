@@ -3,12 +3,13 @@ import { AnswerPanel } from './AnswerPanel.tsx'
 import { loadContent, type Content } from '../content/load.ts'
 import { MathText } from '../ui/MathText.tsx'
 import { Figures } from '../ui/Figure.tsx'
-import { CalculatorIcon, ChevronLeft, ChevronRight, Collapse, Gear, Mute, Sound } from '../design/icons.tsx'
+import { Bookmark, CalculatorIcon, ChevronLeft, ChevronRight, Collapse, Gear, Mute, Sound } from '../design/icons.tsx'
 import { Calculator } from '../calculator/Calculator.tsx'
 import { InkSurface, type InkSurfaceHandle } from '../canvas/InkSurface.tsx'
 import { actionForEvent, S620_ASPECT, updateSettings, useSettings } from '../settings/settings.ts'
 import { SettingsDialog } from '../settings/SettingsDialog.tsx'
 import { ThemeEditor } from '../design/ThemeEditor.tsx'
+import { toggleBookmark, useBookmarks } from '../bookmarks/bookmarks.ts'
 import '../library/library.css'
 import './exercise.css'
 
@@ -18,6 +19,7 @@ const go = (id: string) => (location.hash = `#/uppgift/${encodeURIComponent(id)}
 export function ExercisePage({ id }: { id: string }) {
   const [content, setContent] = useState<Content | null>(null)
   const settings = useSettings()
+  const bookmarks = useBookmarks()
   const [problemOpen, setProblemOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [calcOpen, setCalcOpen] = useState(false)
@@ -85,11 +87,14 @@ export function ExercisePage({ id }: { id: string }) {
         case 'calculator':
           setCalcOpen((o) => !o)
           break
+        case 'bookmark':
+          toggleBookmark(id)
+          break
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [settings.shortcuts, settingsOpen, next, prev])
+  }, [settings.shortcuts, settingsOpen, next, prev, id])
 
   if (!content) return <div className="mk-loading">Laddar …</div>
   if (!ex)
@@ -117,6 +122,15 @@ export function ExercisePage({ id }: { id: string }) {
           </span>
           <span className={`mk-lvl mk-lvl-${ex.level}`}>{ex.level.toUpperCase()}</span>
           {ex.calculator !== undefined && <span className="ex-calc">{ex.calculator ? 'Med räknare' : 'Utan räknare'}</span>}
+          <button
+            className={`ex-bookmark ${bookmarks[ex.id] ? 'on' : ''}`}
+            onClick={() => toggleBookmark(ex.id)}
+            aria-pressed={!!bookmarks[ex.id]}
+            title={`${bookmarks[ex.id] ? 'Sparad till senare – tryck för att ta bort' : 'Spara till senare'} (${settings.shortcuts.bookmark})`}
+          >
+            <Bookmark size={16} filled={!!bookmarks[ex.id]} />
+            {bookmarks[ex.id] ? 'Sparad' : 'Spara till senare'}
+          </button>
         </div>
         <div className="ex-top-right">
           <div className="ex-seg" role="radiogroup" aria-label="Papper">

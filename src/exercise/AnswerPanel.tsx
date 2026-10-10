@@ -7,6 +7,7 @@ import { MathText } from '../ui/MathText.tsx'
 import { Figures } from '../ui/Figure.tsx'
 import { Check, ChevronRight, Lightbulb, Sparkle } from '../design/icons.tsx'
 import { AskAi } from '../ai/AskAi.tsx'
+import { MaxBackdrop, MaxButton, useMaximize } from '../ui/Maximize.tsx'
 import { updateSettings, useSettings } from '../settings/settings.ts'
 
 const MAX_TRIES = 3
@@ -110,6 +111,7 @@ function AnswerField({ ex, index, part, previous, onSolved }: { ex: Exercise; in
   const [showFacit, setShowFacit] = useState(!lastCorrect && tries >= MAX_TRIES)
   const [selfStage, setSelfStage] = useState<'idle' | 'compare'>('idle')
   const [askOpen, setAskOpen] = useState(false)
+  const facitMax = useMaximize()
   const [log, setLog] = useState(() => previous.map((a) => ({ input: a.input, status: a.status })))
   const field = useRef<MathInputHandle>(null)
   const box = useRef<HTMLDivElement>(null)
@@ -275,12 +277,23 @@ function AnswerField({ ex, index, part, previous, onSolved }: { ex: Exercise; in
       </div>
       {showHint && part.hint && <MathText className="ex-reveal hint" text={part.hint} />}
       {showFacit && (
-        <div className="ex-reveal facit">
+        <div className={`ex-reveal facit ${facitMax.max ? 'is-max' : ''}`}>
+          <MaxButton className="ex-reveal-max" max={facitMax.max} onClick={facitMax.toggle} />
+          {facitMax.max && (
+            <div className="max-context">
+              <h3>
+                Uppgift {ex.number}
+                {part.label ? ` ${part.label})` : ''}
+              </h3>
+              <MathText text={[ex.prompt, part.prompt].filter(Boolean).join('\n\n')} />
+            </div>
+          )}
           <MathText text={`**Facit:** ${part.facit}`} />
           <Figures figures={part.facitFigures} />
           {part.solution && <MathText className="ex-solution" text={part.solution} />}
         </div>
       )}
+      {showFacit && facitMax.max && <MaxBackdrop onClose={() => facitMax.setMax(false)} />}
       {askOpen && (
         <AskAi
           context={{

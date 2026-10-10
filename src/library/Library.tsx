@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Exercise } from '../content/types.ts'
 import { loadContent, type Content } from '../content/load.ts'
 import { CoverArt, Poster, motifFor } from '../design/Cover.tsx'
-import { Check, ChevronLeft, ChevronRight, Flame, Gear, Play, Target } from '../design/icons.tsx'
+import { Bookmark, Check, ChevronLeft, ChevronRight, Flame, Gear, Play, Target } from '../design/icons.tsx'
+import { savedFirst, useBookmarks } from '../bookmarks/bookmarks.ts'
 import { MathText } from '../ui/MathText.tsx'
 import { Figure } from '../ui/Figure.tsx'
 import { ThemeEditor } from '../design/ThemeEditor.tsx'
@@ -39,6 +40,7 @@ export function markTransition(e: React.MouseEvent<HTMLElement>) {
 
 export function Library() {
   const content = useContent()
+  const bookmarks = useBookmarks()
   const progress = useProgress(content?.exercises)
   const [settingsOpen, setSettingsOpen] = useState(false)
   if (!content || !progress) return <div className="mk-loading">Laddar …</div>
@@ -51,6 +53,7 @@ export function Library() {
     ...exercises.slice(Math.max(0, exercises.indexOf(featured))).filter((e) => st(e) === 'new').slice(0, 6),
   ].filter((e, i, all) => all.indexOf(e) === i)
   const missed = exercises.filter((e) => st(e) === 'missed')
+  const saved = savedFirst(exercises, bookmarks)
   const topics = [...new Map(exercises.map((e) => [`${e.section}|${e.topic}`, e])).values()]
 
   return (
@@ -64,6 +67,13 @@ export function Library() {
             <Tile key={e.id} ex={e} progress={progress} />
           ))}
         </Row>
+        {saved.length > 0 && (
+          <Row title="Sparade till senare" note="Tryck på bokmärket på en uppgift för att spara eller ta bort den.">
+            {saved.map((e) => (
+              <Tile key={e.id} ex={e} progress={progress} />
+            ))}
+          </Row>
+        )}
         {missed.length > 0 && (
           <Row title="Uppgifter du missat" note="Prova igen – andra gången sitter det oftare.">
             {missed.map((e) => (
@@ -281,9 +291,10 @@ const STATUS_LABEL: Record<Status, string> = { new: 'Ny', attempted: 'Påbörjad
 
 export function Tile({ ex, progress }: { ex: Exercise; progress: Progress }) {
   const p = progress.byExercise[ex.id]
+  const saved = !!useBookmarks()[ex.id]
   const fig = ex.figures?.find((f) => f.kind !== 'table')
   return (
-    <a className={`mk-tile st-${p.status}`} href={exerciseHref(ex.id)} onClick={markTransition} aria-label={`Uppgift ${ex.number}, nivå ${ex.level}, ${STATUS_LABEL[p.status]}`}>
+    <a className={`mk-tile st-${p.status} ${saved ? 'saved' : ''}`} href={exerciseHref(ex.id)} onClick={markTransition} aria-label={`Uppgift ${ex.number}, nivå ${ex.level}, ${STATUS_LABEL[p.status]}${saved ? ', sparad till senare' : ''}`}>
       <div className="mk-tile-card">
         <div className="mk-tile-thumb" aria-hidden="true">
           <MathText text={ex.prompt || ex.parts[0].prompt || ''} />
@@ -301,6 +312,11 @@ export function Tile({ ex, progress }: { ex: Exercise; progress: Progress }) {
           </span>
         )}
         {p.status === 'missed' && <span className="mk-badge miss">Igen</span>}
+        {saved && (
+          <span className="mk-saved" title="Sparad till senare">
+            <Bookmark size={14} filled />
+          </span>
+        )}
         <span className="mk-tile-num" data-vt="num">
           {ex.number}
         </span>

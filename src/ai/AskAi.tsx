@@ -3,6 +3,7 @@ import { AiError, ask, PROVIDERS, useAi, type AskContext, type ChatMessage } fro
 import { MathText } from '../ui/MathText.tsx'
 import { Send, Sparkle } from '../design/icons.tsx'
 import { SettingsDialog } from '../settings/SettingsDialog.tsx'
+import { MaxBackdrop, MaxButton, useMaximize } from '../ui/Maximize.tsx'
 import './ai.css'
 
 /** Förslag på frågor beroende på var eleven är. */
@@ -27,6 +28,7 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
   const abort = useRef<AbortController | null>(null)
   const end = useRef<HTMLDivElement>(null)
   const partial = useRef('')
+  const big = useMaximize()
   const busy = streaming !== null
 
   useEffect(() => () => abort.current?.abort(), [])
@@ -73,7 +75,7 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
   }
 
   return (
-    <div className="ai" role="region" aria-label={`Fråga ${name}`}>
+    <div className={`ai ${big.max ? 'is-max' : ''}`} role="region" aria-label={`Fråga ${name}`}>
       <div className="ai-head">
         <Sparkle size={15} />
         <b>Fråga {name}</b>
@@ -82,6 +84,7 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
             Börja om
           </button>
         )}
+        <MaxButton max={big.max} onClick={big.toggle} />
         <button className="ai-close" onClick={onClose} aria-label="Stäng">
           ×
         </button>
@@ -164,6 +167,7 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
           </form>
         </>
       )}
+      {big.max && <MaxBackdrop onClose={() => big.setMax(false)} />}
       {settingsOpen && <SettingsDialog initialTab="ai" onClose={() => setSettingsOpen(false)} />}
     </div>
   )

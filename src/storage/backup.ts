@@ -2,7 +2,7 @@
 import { db, type Attempt } from './db.ts'
 import type { Drawing } from '../canvas/types.ts'
 
-const LOCAL_KEYS = ['matte.settings.v1', 'matte.theme.v2']
+const LOCAL_KEYS = ['matte.settings.v1', 'matte.theme.v2', 'matte.bookmarks.v1']
 
 export interface Backup {
   app: 'matte'

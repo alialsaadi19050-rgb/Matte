@@ -4,15 +4,19 @@ import { CoverArt } from '../design/Cover.tsx'
 import { ThemeEditor } from '../design/ThemeEditor.tsx'
 import { SettingsDialog } from '../settings/SettingsDialog.tsx'
 import { recommend, useProgress, type Status } from '../progress/progress.ts'
+import { useBookmarks } from '../bookmarks/bookmarks.ts'
 import { Play } from '../design/icons.tsx'
 import { exerciseHref, markTransition, Nav, sectionLabel, Tile, useContent } from './Library.tsx'
 
-const STATUS_FILTERS: { id: Status | 'all'; label: string }[] = [
+type Filter = Status | 'all' | 'saved'
+
+const STATUS_FILTERS: { id: Filter; label: string }[] = [
   { id: 'all', label: 'Alla' },
   { id: 'new', label: 'Nya' },
   { id: 'attempted', label: 'Påbörjade' },
   { id: 'missed', label: 'Missade' },
   { id: 'correct', label: 'Klara' },
+  { id: 'saved', label: 'Sparade' },
 ]
 
 function readQuery() {
@@ -23,10 +27,11 @@ function readQuery() {
 export function ChapterPage({ chapterId }: { chapterId: number }) {
   const content = useContent()
   const progress = useProgress(content?.exercises)
+  const bookmarks = useBookmarks()
   const initial = useMemo(readQuery, [])
   const [section, setSection] = useState<string | null>(initial.section)
   const [topic, setTopic] = useState<string | null>(initial.topic || null)
-  const [status, setStatus] = useState<Status | 'all'>('all')
+  const [status, setStatus] = useState<Filter>('all')
   const [levels, setLevels] = useState<Set<Level>>(new Set())
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -41,7 +46,7 @@ export function ChapterPage({ chapterId }: { chapterId: number }) {
     (e) =>
       (!section || e.section === section) &&
       (!topic || e.topic === topic) &&
-      (status === 'all' || progress.byExercise[e.id].status === status) &&
+      (status === 'all' || (status === 'saved' ? !!bookmarks[e.id] : progress.byExercise[e.id].status === status)) &&
       (!levels.size || levels.has(e.level)),
   )
   const topics = [...new Set(all.filter((e) => !section || e.section === section).map((e) => e.topic).filter(Boolean))] as string[]
@@ -118,7 +123,7 @@ export function ChapterPage({ chapterId }: { chapterId: number }) {
             {STATUS_FILTERS.map((f) => (
               <button key={f.id} className={status === f.id ? 'on' : ''} onClick={() => setStatus(f.id)} aria-pressed={status === f.id}>
                 {f.label}
-                {f.id !== 'all' && <i>{all.filter((e) => progress.byExercise[e.id].status === f.id && (!section || e.section === section)).length}</i>}
+                {f.id !== 'all' && <i>{all.filter((e) => (f.id === 'saved' ? !!bookmarks[e.id] : progress.byExercise[e.id].status === f.id) && (!section || e.section === section)).length}</i>}
               </button>
             ))}
           </div>

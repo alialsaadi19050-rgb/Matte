@@ -180,3 +180,34 @@
 .ex-field-tools .ai-open {
   color: var(--accent-text);
 }
+
+/* Breda formler scrollar för sig, inte hela svaret. */
+.ai-log {
+  overflow-x: hidden;
+}
+.ai-a .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
+/* Förstorad */
+.ai.is-max {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 22px 20px;
+}
+.ai.is-max .ai-head {
+  font-size: 16px;
+}
+.ai.is-max .ai-log {
+  flex: 1;
+  max-height: none;
+  gap: 12px;
+}
+.ai.is-max .ai-a {
+  font-size: 17px;
+}
+.ai.is-max .ai-q {
+  font-size: 15.5px;
+}

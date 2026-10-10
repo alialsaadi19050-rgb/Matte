@@ -148,3 +148,18 @@ export const Send = (p: P) => (
     <path d="M12 19V5M6 11l6-6 6 6" />
   </svg>
 )
+export const Bookmark = ({ filled, ...p }: P & { filled?: boolean }) => (
+  <svg {...base(p)}>
+    <path d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.2-6.5 4.2v-16a1 1 0 0 1 1-1Z" fill={filled ? 'currentColor' : 'none'} />
+  </svg>
+)
+export const Expand = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5" />
+  </svg>
+)
+export const Shrink = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M20 10h-6V4M4 14h6v6M14 10l6.5-6.5M10 14l-6.5 6.5" />
+  </svg>
+)
