@@ -147,11 +147,17 @@ async function deepseekFetch(path: string, key: string, init: RequestInit): Prom
 }
 
 /** Strömmar ett svar från DeepSeek (OpenAI-format, server-sent events). */
-async function askDeepSeek(key: string, messages: ChatMessage[], onText: (snapshot: string) => void, signal: AbortSignal): Promise<string> {
+async function askDeepSeek(key: string, history: ChatMessage[], onText: (snapshot: string) => void, signal: AbortSignal): Promise<string> {
+  const vision = history.some((m) => m.image)
+  const messages = history.map((m) =>
+    m.image
+      ? { role: m.role, content: [{ type: 'text', text: `${m.content}\n\n${IMAGE_NOTE}` }, { type: 'image_url', image_url: { url: m.image.dataUrl } }] }
+      : { role: m.role, content: m.content },
+  )
   const res = await deepseekFetch('/chat/completions', key, {
     method: 'POST',
     signal,
-    body: JSON.stringify({ model: PROVIDERS.deepseek.model, stream: true, max_tokens: 8000, messages: [{ role: 'system', content: SYSTEM }, ...messages] }),
+    body: JSON.stringify({ model: vision ? DEEPSEEK_VISION_MODEL : PROVIDERS.deepseek.model, stream: true, max_tokens: 8000, messages: [{ role: 'system', content: SYSTEM }, ...messages] }),
   })
   const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader()
   let buffer = ''
@@ -191,6 +197,7 @@ Så här svarar du:
 - Om facit inte är visat och uppgiften inte är löst: avslöja inte slutsvaret. Ge en ledtråd eller en fråga som hjälper eleven vidare, och erbjud att visa hela lösningen om eleven vill.
 - Om facit är visat eller uppgiften löst: förklara hela lösningen steg för steg.
 - Om du tror att bokens facit är fel, säg det och förklara varför.
+- Ibland bifogar eleven en bild av sin handskrivna uträkning. Läs den noga och utgå från den: säg vad som är rätt, och peka ut exakt vilket steg eller vilken rad som går fel (citera det eleven skrev). Är något svårläst, säg hur du tolkar det.
 - Ibland läser eleven en genomgång (teori och exempel) i stället för en uppgift. Förklara då begreppen med egna ord, gärna med ett nytt enkelt exempel, och koppla till genomgångens regler.
 
 Formatering (texten visas med en enkel renderare):
@@ -256,7 +263,19 @@ function describeLesson(l: Lesson): string {
   return lines.join('\n')
 }
 
-export type ChatMessage = { role: 'user' | 'assistant'; content: string }
+/** En bild av elevens uträkning på skrivytan. */
+export interface ChatImage {
+  base64: string
+  mediaType: 'image/jpeg'
+  dataUrl: string
+}
+
+export type ChatMessage = { role: 'user' | 'assistant'; content: string; image?: ChatImage }
+
+/** DeepSeek läser bara bilder med Flash-modellen. */
+export const DEEPSEEK_VISION_MODEL = 'deepseek-flash'
+
+const IMAGE_NOTE = '(Bifogat: en bild av elevens handskrivna uträkning från appens skrivyta.)'
 
 /**
  * Ställer en fråga och strömmar svaret. `history` är samtalet hittills; den
@@ -267,8 +286,24 @@ export async function ask(ctx: AskContext, history: ChatMessage[], onText: (snap
   const key = keys[provider]
   try {
     if (!key) throw new AiError(`Lägg in din ${PROVIDERS[provider].name}-nyckel under Inställningar → AI först.`, 'nokey')
-    const messages = history.map((m, i) => (i === 0 && m.role === 'user' ? { role: m.role, content: `${describeTask(ctx)}\n\nElevens fråga: ${m.content}` } : m))
-    if (provider === 'deepseek') return await askDeepSeek(key, messages, onText, signal)
+    // Bara den senaste bilden skickas med, så att följdfrågor inte kostar en bild per fråga.
+    const lastImage = history.findLastIndex((m) => m.image)
+    const withTask = history.map((m, i) => {
+      const own = i === lastImage ? m : { ...m, image: undefined }
+      return i === 0 && m.role === 'user' ? { ...own, content: `${describeTask(ctx)}\n\nElevens fråga: ${m.content}` } : own
+    })
+    if (provider === 'deepseek') return await askDeepSeek(key, withTask, onText, signal)
+    const messages = withTask.map((m) =>
+      m.image
+        ? {
+            role: m.role,
+            content: [
+              { type: 'image' as const, source: { type: 'base64' as const, media_type: m.image.mediaType, data: m.image.base64 } },
+              { type: 'text' as const, text: `${m.content}\n\n${IMAGE_NOTE}` },
+            ],
+          }
+        : { role: m.role, content: m.content },
+    )
     const c = await claudeClient(key)
     const stream = c.beta.messages.stream(
       {

@@ -83,3 +83,19 @@ export function download(blob: Blob, filename: string) {
   a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
+
+/**
+ * En bild av det du skrivit, för att visa AI:n din uträkning: tätt beskuren, vit bakgrund
+ * utan rutor och högst 1600 px på längsta sidan. Null om skrivytan är tom.
+ */
+export async function snapshotForAi(strokes: Stroke[]): Promise<{ base64: string; mediaType: 'image/jpeg'; dataUrl: string } | null> {
+  const ink = strokes.filter((s) => s.tool === 'pen' || s.tool === 'highlighter')
+  const b = unionBox(ink.map(strokeBox))
+  if (!b) return null
+  const area = { minX: b.minX - 20, minY: b.minY - 20, maxX: b.maxX + 20, maxY: b.maxY + 20 }
+  const longest = Math.max(area.maxX - area.minX, area.maxY - area.minY)
+  const scale = Math.min(2, 1600 / longest)
+  const c = renderArea({ strokes: ink, background: 'blank', paper: 'light', title: '' }, area, scale, 0)
+  const dataUrl = c.toDataURL('image/jpeg', 0.88)
+  return { base64: dataUrl.slice(dataUrl.indexOf(',') + 1), mediaType: 'image/jpeg', dataUrl }
+}

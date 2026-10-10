@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { AiError, ask, PROVIDERS, useAi, type AskContext, type ChatMessage } from './ai.ts'
+import { AiError, ask, PROVIDERS, useAi, type AskContext, type ChatImage, type ChatMessage } from './ai.ts'
+import { loadDrawing } from '../storage/db.ts'
 import { MathText } from '../ui/MathText.tsx'
 import { Send, Sparkle } from '../design/icons.tsx'
 import { SettingsDialog } from '../settings/SettingsDialog.tsx'
@@ -31,6 +32,27 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
   const partial = useRef('')
   const big = useMaximize()
   const busy = streaming !== null
+  const exerciseId = context.kind === 'lesson' ? null : context.ex.id
+  // Skicka med en bild av skrivytan? Bara om det finns något skrivet.
+  const [hasWork, setHasWork] = useState(false)
+  const [withWork, setWithWork] = useState(true)
+  useEffect(() => {
+    if (!exerciseId) return
+    const check = () => loadDrawing(exerciseId).then((d) => setHasWork(!!d?.strokes.some((s) => s.tool === 'pen')))
+    check()
+    const t = setInterval(check, 3000)
+    return () => clearInterval(t)
+  }, [exerciseId])
+
+  const snapshot = async (): Promise<ChatImage | undefined> => {
+    if (!exerciseId || !withWork) return undefined
+    // Ge skrivytan en stund att spara det senaste strecket.
+    await new Promise((r) => setTimeout(r, 400))
+    const d = await loadDrawing(exerciseId)
+    if (!d?.strokes.length) return undefined
+    const { snapshotForAi } = await import('../canvas/export.ts')
+    return (await snapshotForAi(d.strokes)) ?? undefined
+  }
 
   useEffect(() => () => abort.current?.abort(), [])
   useEffect(() => {
@@ -40,11 +62,12 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
   const send = async (question: string) => {
     const q = question.trim()
     if (!q || busy) return
-    const history: ChatMessage[] = [...chat, { role: 'user', content: q }]
-    setChat(history)
     setDraft('')
     setError(null)
     setStreaming('')
+    const image = await snapshot().catch(() => undefined)
+    const history: ChatMessage[] = [...chat, { role: 'user', content: q, image }]
+    setChat(history)
     const ctrl = new AbortController()
     abort.current = ctrl
     try {
@@ -111,7 +134,16 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
           )}
 
           <div className="ai-log">
-            {chat.map((m, i) => (m.role === 'user' ? <p key={i} className="ai-q">{m.content}</p> : <MathText key={i} className="ai-a" text={m.content} />))}
+            {chat.map((m, i) =>
+              m.role === 'user' ? (
+                <div key={i} className="ai-q">
+                  {m.image && <img src={m.image.dataUrl} alt="Din uträkning" className="ai-q-img" />}
+                  <p>{m.content}</p>
+                </div>
+              ) : (
+                <MathText key={i} className="ai-a" text={m.content} />
+              ),
+            )}
             {busy &&
               (streaming ? (
                 <MathText className="ai-a" text={streaming} />
@@ -135,6 +167,13 @@ export function AskAi({ context, onClose }: { context: AskContext; onClose: () =
             <div ref={end} />
           </div>
 
+          {hasWork && (
+            <label className="ai-work">
+              <input type="checkbox" checked={withWork} onChange={(e) => setWithWork(e.target.checked)} />
+              Visa min uträkning från skrivytan
+              {withWork && provider === 'deepseek' && <span> · DeepSeek Flash läser bilden</span>}
+            </label>
+          )}
           <form
             className="ai-form"
             onSubmit={(e) => {
