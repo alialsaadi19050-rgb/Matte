@@ -135,3 +135,16 @@ a {
   font-size: 13px;
   font-weight: 600;
 }
+/* Breda tabeller (t.ex. i facit) scrollar i sidled i stället för att klippas av. */
+.mt-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.mt-table-wrap .mt-table {
+  margin-right: 1px;
+}
+.figures > .mt-table-wrap,
+.figures .mt-table-wrap {
+  min-width: 0;
+}

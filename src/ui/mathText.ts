@@ -48,11 +48,11 @@ function table(lines: string[]): string {
   const rows = lines.filter((l) => !/^\s*\|?\s*-{3}/.test(l)).map(cells)
   const [head, ...body] = rows
   return (
-    '<table class="mt-table"><thead><tr>' +
+    '<div class="mt-table-wrap"><table class="mt-table"><thead><tr>' +
     head.map((c) => `<th>${inline(c)}</th>`).join('') +
     '</tr></thead><tbody>' +
     body.map((r) => '<tr>' + r.map((c) => `<td>${inline(c)}</td>`).join('') + '</tr>').join('') +
-    '</tbody></table>'
+    '</tbody></table></div>'
   )
 }
 

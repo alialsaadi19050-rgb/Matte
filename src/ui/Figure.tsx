@@ -123,28 +123,30 @@ export function Figure({ figure }: { figure: FigureData }) {
       return <Venn spec={figure.spec} alt={figure.alt} />
     case 'table':
       return (
-        <table className="mt-table" aria-label={figure.alt}>
-          <thead>
-            <tr>
-              {figure.head.map((h, i) => (
-                <th key={i}>
-                  <MathText text={h} />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {figure.rows.map((row, i) => (
-              <tr key={i}>
-                {row.map((c, j) => (
-                  <td key={j}>
-                    <MathText text={c} />
-                  </td>
+        <div className="mt-table-wrap">
+          <table className="mt-table" aria-label={figure.alt}>
+            <thead>
+              <tr>
+                {figure.head.map((h, i) => (
+                  <th key={i}>
+                    <MathText text={h} />
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {figure.rows.map((row, i) => (
+                <tr key={i}>
+                  {row.map((c, j) => (
+                    <td key={j}>
+                      <MathText text={c} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )
   }
 }
