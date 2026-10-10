@@ -20,7 +20,7 @@ Du avgör dessa på granskningssidan (filtret ”Misstänkta fel”). Tills dess
 | Uppgift | Facit | Omräknat | Varför |
 |---|---|---|---|
 | 1132 | 258 | 158 | Facits egen metod ger 80 + 40 + 20 + 10 + 5 + 2 + 1 = 158. Uppräkning med dator ger också 158. |
-| 1158 | 2 713 200 | 860 728 | Ledtråden $\binom84\binom{20}6$ räknar samma urval flera gånger (samma fel som Erik i 1161). |
+| 1158 | 2 713 200 | 860 728 | **Beslutat: 860 728.** Ledtråden $\binom84\binom{20}6$ räknar samma urval flera gånger (samma fel som Erik i 1161). Facit, ledtråd och lösning är rättade i appen. |
 | 1218b | {8, 10, 15, 21, 45} | {1, 8, 10, 15, 21, 45} | 1 är inget primtal och borde ingå i komplementet. |
 | Bl. 31b | ≈ 6,69·10¹⁰ och ”= 2 453 880” | 66 905 856 160 | Raden ”= 2 453 880” stämmer inte med uttrycket. |
 | Bl. 36b | 5 045 040 | 75 675 600 | Om inga två av de fyra bästa får vara i samma grupp. |
