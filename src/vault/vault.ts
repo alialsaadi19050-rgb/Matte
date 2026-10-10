@@ -52,8 +52,28 @@ const forgetKey = () => keyStore('readwrite', (s) => s.delete('vault'))
 
 /* ---------- Inloggning ---------- */
 
+/**
+ * Boken och sidans kod hör ihop. Har webbläsaren kvar en äldre version av sidan än boken
+ * (eller tvärtom) laddas sidan om en gång, utan cache, så att de passar ihop igen.
+ */
+function parseOrReload(bytes: Uint8Array) {
+  try {
+    const vault = parseVault(bytes)
+    sessionStorage.removeItem(RELOADED)
+    return vault
+  } catch (e) {
+    if (!sessionStorage.getItem(RELOADED)) {
+      sessionStorage.setItem(RELOADED, '1')
+      location.reload()
+      return new Promise<never>(() => {})
+    }
+    throw new Error('Sidan har uppdaterats. Ladda om den (Ctrl+Shift+R, eller stäng fliken och öppna igen).', { cause: e })
+  }
+}
+const RELOADED = 'matte.vault.reloaded'
+
 async function fetchVault(): Promise<Uint8Array> {
-  const res = await fetch(`${import.meta.env.BASE_URL}vault.bin`)
+  const res = await fetch(`${import.meta.env.BASE_URL}vault.bin`, { cache: 'no-cache' })
   if (!res.ok) throw new Error(`Kunde inte hämta innehållet (${res.status}).`)
   return new Uint8Array(await res.arrayBuffer())
 }
@@ -64,7 +84,7 @@ export async function restoreSession(): Promise<void> {
   try {
     const saved = await loadKey()
     if (saved) {
-      files = (await openVault(parseVault(await fetchVault()), saved)).files
+      files = (await openVault(await parseOrReload(await fetchVault()), saved)).files
       return set('open')
     }
   } catch {
@@ -81,9 +101,10 @@ export async function login(user: string, password: string): Promise<void> {
   } catch {
     throw new Error(navigator.onLine ? 'Kunde inte hämta innehållet. Försök igen.' : 'Du är offline. Första inloggningen kräver internet.')
   }
+  const vault = await parseOrReload(bytes)
   let unlock: Unlock
   try {
-    const res = await unlockVault(parseVault(bytes), user, password)
+    const res = await unlockVault(vault, user, password)
     files = res.files.files
     unlock = res.unlock
   } catch {
