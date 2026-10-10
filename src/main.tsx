@@ -11,6 +11,17 @@ import { applyTheme, loadTheme } from './design/theme.ts'
 
 applyTheme(loadTheme())
 
+// När en ny version av appen tar över (ny service worker) laddas sidan om, så att koden
+// och den låsta boken alltid kommer från samma version. Inte vid allra första besöket.
+if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+  let reloaded = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloaded) return
+    reloaded = true
+    location.reload()
+  })
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
