@@ -177,6 +177,10 @@ Försök, statistik, det du skrivit på skrivytan, sparade uppgifter och genomg�
 - Status och **Synka nu** finns under **Inställningar → Data**.
 - Gratisprojekt i Supabase pausas efter ungefär en vecka utan användning. Då startar du det igen på supabase.com. Appen fungerar lokalt under tiden.
 
+### AI:n ser din uträkning
+
+Har du skrivit något på skrivytan finns valet **Visa min uträkning från skrivytan** i frågerutan (på som standard). Då skickas en bild av det du skrivit med frågan: tätt beskuren, vit bakgrund, högst 1600 px. AI:n läser din handskrift och pekar ut var det går fel. Vid följdfrågor skickas bara den senaste bilden. Claude läser bilden direkt. DeepSeek använder modellen **deepseek-flash** för frågor med bild, eftersom Pro inte läser bilder.
+
 ## Lär dig (genomgångar)
 
 Under **Lär dig** (`#/lar`) finns en genomgång per delområde, byggd på bokens teorisidor: Lådprincipen, Multiplikations- och additionsprincipen, Permutationer, Kombinationer, Sannolikhet, Binomialsatsen, Mängder, Mängdoperationer och Venndiagram.
