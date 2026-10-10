@@ -486,6 +486,38 @@ function AiTab() {
   )
 }
 
+function SyncSection() {
+  const [mod, setMod] = useState<typeof import('../sync/sync.ts') | null>(null)
+  useEffect(() => {
+    import('../sync/sync.ts').then(setMod)
+  }, [])
+  return mod ? <SyncStatusView mod={mod} /> : null
+}
+
+function SyncStatusView({ mod }: { mod: typeof import('../sync/sync.ts') }) {
+  const st = mod.useSyncStatus()
+  const text =
+    st.kind === 'ok'
+      ? `Synkad ${new Date(st.at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}.`
+      : st.kind === 'syncing'
+        ? 'Synkar …'
+        : st.kind === 'offline'
+          ? 'Ingen internetanslutning. Allt sparas här och synkas när nätet är tillbaka.'
+          : st.kind === 'error'
+            ? st.message
+            : 'Synken är inte igång. Logga ut och in igen för att starta den.'
+  return (
+    <section className="st-section">
+      <h3>Synk mellan enheter</h3>
+      <p className="st-help">Dina försök, det du skrivit på skrivytan, sparade uppgifter och genomgångar synkas automatiskt till alla enheter där du är inloggad. Inställningar och färger stannar på varje enhet.</p>
+      <p className={`st-note ${st.kind === 'ok' ? 'ok' : ''}`}>{text}</p>
+      <button className="st-secondary" disabled={st.kind === 'syncing' || st.kind === 'off'} onClick={() => mod.syncNow()}>
+        Synka nu
+      </button>
+    </section>
+  )
+}
+
 function DataTab() {
   const [pending, setPending] = useState<{ backup: Backup; summary: BackupSummary } | null>(null)
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
@@ -555,6 +587,7 @@ function DataTab() {
         )}
         {message && <p className={`st-note ${message.kind === 'ok' ? 'ok' : ''}`}>{message.text}</p>}
       </section>
+      {!import.meta.env.DEV && <SyncSection />}
       {!import.meta.env.DEV && (
         <section className="st-section">
           <h3>Logga ut</h3>

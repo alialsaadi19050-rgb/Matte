@@ -4,7 +4,14 @@
 //
 // I utvecklingsläget (npm run dev) läses de okrypterade filerna i public/content direkt.
 import { useSyncExternalStore } from 'react'
-import { login as unlockVault, openVault, parseVault, type Unlock } from './crypto.ts'
+import { login as unlockVault, openVault, parseVault, syncSecret, type Unlock } from './crypto.ts'
+import type { SyncCreds } from '../sync/sync.ts'
+
+/** Det som sparas efter inloggning: nyckeln till boken och synkens hemlighet (inget lösenord). */
+type Saved = Unlock & { sync?: SyncCreds }
+
+// Synken laddas först när den behövs.
+const sync = () => import('../sync/sync.ts')
 
 export type VaultStatus = 'checking' | 'locked' | 'open'
 
@@ -45,9 +52,9 @@ function keyStore<T>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRe
   })
 }
 
-const saveKey = (u: Unlock) => keyStore('readwrite', (s) => s.put(u, 'vault'))
+const saveKey = (u: Saved) => keyStore('readwrite', (s) => s.put(u, 'vault'))
 // Äldre versioner sparade bara nyckeln (en inloggning, format 1).
-const loadKey = () => keyStore<Unlock | CryptoKey | undefined>('readonly', (s) => s.get('vault')).then((v) => (v instanceof CryptoKey ? { slot: 'v1', key: v } : v))
+const loadKey = () => keyStore<Saved | CryptoKey | undefined>('readonly', (s) => s.get('vault')).then((v): Saved | undefined => (v instanceof CryptoKey ? { slot: 'v1', key: v } : v))
 const forgetKey = () => keyStore('readwrite', (s) => s.delete('vault'))
 
 /* ---------- Inloggning ---------- */
@@ -83,9 +90,12 @@ export async function restoreSession(): Promise<void> {
   if (PLAIN) return
   try {
     const saved = await loadKey()
-    if (saved) {
+    // Inloggningar från innan synken fanns saknar synkens hemlighet: logga in en gång till.
+    if (saved?.sync) {
       files = (await openVault(await parseOrReload(await fetchVault()), saved)).files
-      return set('open')
+      set('open')
+      sync().then((s) => s.startSync(saved.sync!))
+      return
     }
   } catch {
     // Fel nyckel (nytt lösenord, borttagen inloggning) eller ingen lagring: logga in igen.
@@ -102,21 +112,28 @@ export async function login(user: string, password: string): Promise<void> {
     throw new Error(navigator.onLine ? 'Kunde inte hämta innehållet. Försök igen.' : 'Du är offline. Första inloggningen kräver internet.')
   }
   const vault = await parseOrReload(bytes)
-  let unlock: Unlock
+  let saved: Saved
   try {
     const res = await unlockVault(vault, user, password)
     files = res.files.files
-    unlock = res.unlock
+    saved = { ...res.unlock, sync: { user: res.unlock.slot, secret: await syncSecret(user, password) } }
   } catch {
     throw new Error('Fel användarnamn eller lösenord.')
   }
-  await saveKey(unlock).catch(() => {
+  await saveKey(saved).catch(() => {
     /* utan lagring får du logga in varje gång */
   })
+  // Hämta framstegen från dina andra enheter innan sidan visas, så att statistiken stämmer direkt.
+  const s = await sync()
+  await Promise.race([s.startSync(saved.sync!), new Promise((r) => setTimeout(r, 8000))])
   set('open')
 }
 
 export async function logout(): Promise<void> {
+  // Skicka det sista innan utloggningen, om det går.
+  const s = await sync()
+  await Promise.race([s.syncNow(), new Promise((r) => setTimeout(r, 4000))])
+  s.stopSync()
   files = null
   await forgetKey().catch(() => {})
   set('locked')

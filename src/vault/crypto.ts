@@ -143,3 +143,15 @@ async function decryptWith(vault: Extract<Vault, { version: 2 }>, bookKey: Uint8
   const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: vault.iv as BufferSource }, await importBookKey(bookKey), vault.data as BufferSource)
   return JSON.parse(dec.decode(plain)) as VaultFiles
 }
+
+/* ---------- Synk ---------- */
+
+/**
+ * Hemligheten för synkservern. Härleds ur användarnamn och lösenord med ett eget salt, så
+ * servern får aldrig lösenordet och kan inte räkna fram nyckeln till boken.
+ */
+export async function syncSecret(user: string, password: string): Promise<string> {
+  const base = await crypto.subtle.importKey('raw', enc.encode(keyMaterial(user, password)), 'PBKDF2', false, ['deriveBits'])
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode('matte-sync-v1'), iterations: 200_000 }, base, 256)
+  return Array.from(new Uint8Array(bits), (b) => b.toString(16).padStart(2, '0')).join('')
+}

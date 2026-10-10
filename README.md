@@ -166,6 +166,17 @@ Välj AI och klistra in din egen nyckel under **Inställningar → AI**. Appen t
 - DeepSeek behandlar frågorna på servrar i Kina.
 - Det kräver internet. Resten av appen fungerar offline som vanligt.
 
+## Synk mellan enheter
+
+Försök, statistik, det du skrivit på skrivytan, sparade uppgifter och genomgångar synkas automatiskt mellan alla enheter där du är inloggad (Supabase-projektet **matte** i Stockholm). Inställningar, färger, API-nycklar och TI-84-ROM stannar på varje enhet.
+
+- Allt sparas först lokalt, så appen fungerar utan nät. Synken körs vid inloggning, strax efter varje ändring, var 45:e sekund och när nätet kommer tillbaka.
+- Lösenordet lämnar aldrig enheten. Servern får en hemlighet som räknas fram ur det (med ett annat salt än boknyckeln), och varje konto når bara sin egen data. Tabellerna går inte att läsa direkt, bara via funktionerna `sync_pull` och `sync_push`.
+- Om två enheter ändrat samma sak vinner den senaste ändringen. Försök läggs alltid ihop, och klarade testfrågor slås ihop.
+- Loggar någon annan in i samma webbläsare rensas den förra personens lokala data först (den finns kvar på servern).
+- Status och **Synka nu** finns under **Inställningar → Data**.
+- Gratisprojekt i Supabase pausas efter ungefär en vecka utan användning. Då startar du det igen på supabase.com. Appen fungerar lokalt under tiden.
+
 ## Lär dig (genomgångar)
 
 Under **Lär dig** (`#/lar`) finns en genomgång per delområde, byggd på bokens teorisidor: Lådprincipen, Multiplikations- och additionsprincipen, Permutationer, Kombinationer, Sannolikhet, Binomialsatsen, Mängder, Mängdoperationer och Venndiagram.

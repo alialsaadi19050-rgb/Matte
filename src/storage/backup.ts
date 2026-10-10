@@ -2,7 +2,7 @@
 import { db, type Attempt } from './db.ts'
 import type { Drawing } from '../canvas/types.ts'
 
-const LOCAL_KEYS = ['matte.settings.v1', 'matte.theme.v2', 'matte.bookmarks.v1', 'matte.lessons.v1']
+const LOCAL_KEYS = ['matte.settings.v1', 'matte.theme.v2', 'matte.bookmarks.v1', 'matte.bookmarks.removed.v1', 'matte.lessons.v1']
 
 export interface Backup {
   app: 'matte'
@@ -49,10 +49,16 @@ export async function readBackup(file: File): Promise<{ backup: Backup; summary:
 
 /** Ersätter allt som finns nu med innehållet i backupen. */
 export async function restoreBackup(b: Backup): Promise<void> {
+  // Efter omladdningen skickas allt upp till synken igen.
+  try {
+    localStorage.setItem('matte.sync.full', '1')
+  } catch {
+    /* ingen lagring */
+  }
   await db.transaction('rw', db.attempts, db.drawings, async () => {
     await db.attempts.clear()
     await db.drawings.clear()
-    await db.attempts.bulkAdd(b.attempts.map(({ id: _id, ...a }) => a))
+    await db.attempts.bulkAdd(b.attempts.map(({ id: _id, ...a }) => ({ ...a, uid: a.uid ?? crypto.randomUUID() })))
     await db.drawings.bulkPut(b.drawings)
   })
   for (const [k, v] of Object.entries(b.local ?? {})) {
