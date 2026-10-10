@@ -1,0 +1,268 @@
+/* Skrivytan: lugn och fri från distraktioner. */
+.ink-surface {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ink-surface.paper-light {
+  background: #f6f3ec;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 20px 50px -30px rgb(0 0 0 / calc(0.9 * var(--shadow-k)));
+}
+.ink-surface.paper-dark {
+  background: #17171b;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.ink-host {
+  position: absolute;
+  inset: 0;
+}
+.ink-canvas {
+  display: block;
+  touch-action: none;
+}
+
+/* Visar var pennan hamnar medan den svävar över plattan. */
+.ink-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  border: 1.5px solid var(--c);
+  background: color-mix(in srgb, var(--c) 28%, transparent);
+  transition: opacity 0.12s, width 0.12s, height 0.12s;
+  will-change: transform;
+}
+.ink-cursor[data-tool='highlighter'] {
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--c) 45%, transparent);
+}
+.ink-cursor[data-tool='eraser'] {
+  border: 1.5px dashed rgba(120, 120, 130, 0.9);
+  background: rgba(255, 255, 255, 0.25);
+}
+.ink-cursor[data-tool='lasso'] {
+  width: 12px !important;
+  height: 12px !important;
+  border: 1.5px dashed var(--accent);
+  background: transparent;
+}
+
+/* Verktygen */
+.ex-tools {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(22, 22, 26, 0.84);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 14px 30px -10px rgba(0, 0, 0, 0.5);
+  z-index: 3;
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.ex-tools button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #b9b6c0;
+  transition: background 0.15s, color 0.15s;
+}
+.ex-tools button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.ex-tools button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ex-tools button.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.55);
+}
+.ex-tools button.text {
+  font-size: 12px;
+  font-weight: 700;
+}
+.ex-tools .swatch i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.ex-tools .swatch.on,
+.ex-tools .width.on {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.ex-tools .width i {
+  border-radius: 50%;
+  background: #d7d4dd;
+}
+.ex-tools-sep {
+  flex: none;
+  width: 22px;
+  height: 1px;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.12);
+}
+.ex-tools .ex-tools-min {
+  height: 26px;
+  color: #77747f;
+}
+.ex-pop {
+  position: absolute;
+  left: 64px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  min-width: 170px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(22, 22, 26, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 14px 30px -8px rgba(0, 0, 0, 0.6);
+  z-index: 5;
+}
+.ex-pop button {
+  width: auto;
+  height: 34px;
+  justify-content: start;
+  padding: 0 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  display: flex;
+  align-items: center;
+}
+.ex-pop button.on {
+  box-shadow: none;
+}
+.ex-pop hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
+}
+.ex-pop .danger,
+.ink-hint .danger {
+  color: #ff8a8a;
+}
+
+.ex-page-meta {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.paper-light .ex-page-meta {
+  color: rgba(0, 0, 0, 0.42);
+}
+.paper-dark .ex-page-meta {
+  color: rgba(255, 255, 255, 0.4);
+}
+.ex-page-meta button,
+.ink-chip {
+  pointer-events: auto;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 8px;
+  color: inherit;
+  font-weight: 650;
+}
+.paper-light .ex-page-meta button,
+.paper-light .ink-chip {
+  background: rgba(0, 0, 0, 0.06);
+}
+.paper-dark .ex-page-meta button,
+.paper-dark .ink-chip {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ink-hint {
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  z-index: 4;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  width: min(480px, calc(100% - 120px));
+  padding: 14px 16px;
+  border-radius: 14px;
+  color: #f4f1ea;
+  background: rgba(22, 22, 26, 0.94);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 20px 40px -12px rgba(0, 0, 0, 0.6);
+  font-size: 14px;
+  line-height: 1.45;
+  animation: ink-in 0.3s var(--ease-out);
+}
+.ink-hint div {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.ink-hint button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  font-weight: 650;
+}
+@keyframes ink-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+}
+
+/* Låg skrivyta (t.ex. skrivzonen): mindre knappar så att alla verktyg får plats. */
+.ink-surface {
+  container-type: size;
+}
+@container (max-height: 680px) {
+  .ex-tools {
+    padding: 4px;
+  }
+  .ex-tools button {
+    width: 32px;
+    height: 30px;
+    border-radius: 8px;
+  }
+  .ex-tools svg {
+    width: 17px;
+    height: 17px;
+  }
+  .ex-tools .swatch i {
+    width: 15px;
+    height: 15px;
+  }
+  .ex-tools-sep {
+    margin: 2px 0;
+  }
+}

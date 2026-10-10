@@ -1,0 +1,182 @@
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { AnswerPanel } from './AnswerPanel.tsx'
+import { loadContent, type Content } from '../content/load.ts'
+import { MathText } from '../ui/MathText.tsx'
+import { Figures } from '../ui/Figure.tsx'
+import { CalculatorIcon, ChevronLeft, ChevronRight, Collapse, Gear, Mute, Sound } from '../design/icons.tsx'
+import { Calculator } from '../calculator/Calculator.tsx'
+import { InkSurface, type InkSurfaceHandle } from '../canvas/InkSurface.tsx'
+import { actionForEvent, S620_ASPECT, updateSettings, useSettings } from '../settings/settings.ts'
+import { SettingsDialog } from '../settings/SettingsDialog.tsx'
+import { ThemeEditor } from '../design/ThemeEditor.tsx'
+import '../library/library.css'
+import './exercise.css'
+
+const isTyping = (t: EventTarget | null) => t instanceof HTMLElement && !!t.closest('input, textarea, select, [contenteditable="true"]')
+const go = (id: string) => (location.hash = `#/uppgift/${encodeURIComponent(id)}`)
+
+export function ExercisePage({ id }: { id: string }) {
+  const [content, setContent] = useState<Content | null>(null)
+  const settings = useSettings()
+  const [problemOpen, setProblemOpen] = useState(true)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [calcOpen, setCalcOpen] = useState(false)
+  const ink = useRef<InkSurfaceHandle>(null)
+  const answers = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    loadContent().then(setContent)
+  }, [])
+
+  const { ex, prev, next } = useMemo(() => {
+    const list = content?.exercises ?? []
+    const i = list.findIndex((e) => e.id === id)
+    return { ex: list[i], prev: list[i - 1], next: list[i + 1] }
+  }, [content, id])
+
+  // Kortkommandon. Ritplattans snabbknappar skickar samma tangenter.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (settingsOpen) return
+      const typing = isTyping(e.target)
+      const action = actionForEvent(e, settings.shortcuts)
+      if (!action) return
+      if (typing && action !== 'undo' && action !== 'redo') return
+      if (typing && (action === 'undo' || action === 'redo')) return // låt textfältet ångra sin egen text
+      e.preventDefault()
+      const h = ink.current
+      switch (action) {
+        case 'pen':
+        case 'highlighter':
+        case 'eraser':
+        case 'lasso':
+          h?.setTool({ tool: action })
+          break
+        case 'eraserMode':
+          h?.toggleEraserMode()
+          break
+        case 'undo':
+          h?.undo()
+          break
+        case 'redo':
+          h?.redo()
+          break
+        case 'color1':
+        case 'color2':
+        case 'color3':
+        case 'color4':
+          h?.setTool({ tool: 'pen', color: (['ink', 'blue', 'red', 'green'] as const)[Number(action.slice(-1)) - 1] })
+          break
+        case 'zoomReset':
+          h?.resetZoom()
+          break
+        case 'submit': {
+          // Hoppa till första svaret som inte är klart.
+          const input = answers.current?.querySelector<HTMLElement>('.ex-field:not(.solved) input:not([readonly]), .ex-field:not(.solved) math-field')
+          input?.focus()
+          break
+        }
+        case 'next':
+          if (next) go(next.id)
+          break
+        case 'prev':
+          if (prev) go(prev.id)
+          break
+        case 'calculator':
+          setCalcOpen((o) => !o)
+          break
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [settings.shortcuts, settingsOpen, next, prev])
+
+  if (!content) return <div className="mk-loading">Laddar …</div>
+  if (!ex)
+    return (
+      <div className="mk-loading">
+        Hittar ingen uppgift {id}. <a href="#/">Till startsidan</a>
+      </div>
+    )
+
+  const zone = settings.zone
+  const zoneStyle: CSSProperties | undefined = zone.enabled
+    ? { position: 'fixed', left: zone.x, top: zone.y, width: zone.width, height: Math.round(zone.width / S620_ASPECT), flex: 'none', zIndex: 20 }
+    : undefined
+  const section = content.sections.find((s) => s.section === ex.section)
+
+  return (
+    <div className={`ex grain ${zone.enabled ? 'zone-mode' : ''}`}>
+      <header className="ex-top">
+        <a className="ex-back" href={`#/kapitel/${ex.chapter}?avsnitt=${encodeURIComponent(ex.section)}`}>
+          <ChevronLeft size={18} /> {section ? (section.section.includes('.') ? `${section.section} ${section.title}` : section.title) : 'Tillbaka'}
+        </a>
+        <div className="ex-title">
+          <span className="ex-num" style={{ viewTransitionName: 'ex-num' }}>
+            {ex.number}
+          </span>
+          <span className={`mk-lvl mk-lvl-${ex.level}`}>{ex.level.toUpperCase()}</span>
+          {ex.calculator !== undefined && <span className="ex-calc">{ex.calculator ? 'Med räknare' : 'Utan räknare'}</span>}
+        </div>
+        <div className="ex-top-right">
+          <div className="ex-seg" role="radiogroup" aria-label="Papper">
+            {(['light', 'dark'] as const).map((p) => (
+              <button key={p} role="radio" aria-checked={settings.paper === p} className={settings.paper === p ? 'on' : ''} onClick={() => updateSettings({ paper: p })}>
+                {p === 'light' ? 'Ljust papper' : 'Mörkt papper'}
+              </button>
+            ))}
+          </div>
+          <button className="ex-icon" onClick={() => updateSettings({ sound: !settings.sound })} aria-label={settings.sound ? 'Stäng av ljud' : 'Sätt på ljud'} title={settings.sound ? 'Ljud på' : 'Ljud av'}>
+            {settings.sound ? <Sound size={19} /> : <Mute size={19} />}
+          </button>
+          <button className={`ex-icon ${calcOpen ? 'on' : ''}`} onClick={() => setCalcOpen((o) => !o)} aria-label="Miniräknare" aria-pressed={calcOpen} title={`Miniräknare (${settings.shortcuts.calculator})`}>
+            <CalculatorIcon size={19} />
+          </button>
+          <button className="ex-icon" onClick={() => setSettingsOpen(true)} aria-label="Inställningar" title="Inställningar">
+            <Gear size={19} />
+          </button>
+          <button className="ex-icon" disabled={!prev} onClick={() => prev && go(prev.id)} aria-label="Föregående uppgift" title={`Föregående (${settings.shortcuts.prev})`}>
+            <ChevronLeft size={20} />
+          </button>
+          <button className="ex-icon" disabled={!next} onClick={() => next && go(next.id)} aria-label="Nästa uppgift" title={`Nästa (${settings.shortcuts.next})`}>
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </header>
+
+      <div className="ex-body">
+        <main className="ex-work" style={zone.enabled ? { paddingBottom: Math.max(0, window.innerHeight - zone.y) } : undefined}>
+          <section className={`ex-problem ${problemOpen ? '' : 'closed'}`}>
+            <button className="ex-problem-toggle" onClick={() => setProblemOpen((o) => !o)} aria-expanded={problemOpen}>
+              <Collapse size={16} style={{ transform: problemOpen ? 'none' : 'rotate(180deg)' }} />
+              {problemOpen ? 'Dölj uppgiften' : `Visa uppgift ${ex.number}`}
+            </button>
+            <div className="ex-problem-body">
+              <div className="ex-problem-text">
+                <MathText text={ex.prompt} />
+                <ol className="ex-parts">
+                  {ex.parts.map((p, i) =>
+                    p.label || p.prompt ? (
+                      <li key={p.label ?? i}>
+                        {p.label && <b>{p.label})</b>} <MathText text={p.prompt ?? ''} />
+                      </li>
+                    ) : null,
+                  )}
+                </ol>
+              </div>
+              <Figures figures={ex.figures} />
+            </div>
+          </section>
+
+          <InkSurface ref={ink} exerciseId={ex.id} title={`Uppgift ${ex.number}`} paper={settings.paper} className="ex-ink" style={zoneStyle} />
+        </main>
+
+        <AnswerPanel key={ex.id} ex={ex} panelRef={answers} next={next} />
+      </div>
+
+      <Calculator open={calcOpen} onClose={() => setCalcOpen(false)} noCalculator={ex.calculator === false} />
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      <ThemeEditor />
+    </div>
+  )
+}

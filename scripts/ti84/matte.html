@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TI-84 Plus CE</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; background: transparent; }
+      body { font-family: system-ui, sans-serif; color: #eee; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/matte-main.tsx"></script>
+    <script>
+      // Skala räknaren så att den fyller panelen, upp eller ner.
+      // Dölj kontrollraden (Pause/Reset) och tangentbordshjälpen så att räknaren får all plats.
+      const hideExtras = () => {
+        for (const b of document.querySelectorAll('button')) {
+          if (b.textContent.trim() === 'Pause' || b.textContent.trim() === 'Resume') b.parentElement.style.display = 'none'
+        }
+        for (const st of document.querySelectorAll('strong')) {
+          if (st.textContent.startsWith('Keyboard Controls')) st.closest('div').style.display = 'none'
+        }
+      }
+      const fit = () => {
+        const root = document.getElementById('root')
+        if (!root) return
+        hideExtras()
+        document.body.style.zoom = '1'
+        const h = root.scrollHeight
+        const w = root.scrollWidth
+        const k = Math.min(3, window.innerHeight / Math.max(1, h), window.innerWidth / Math.max(1, w))
+        document.body.style.zoom = String(k)
+      }
+      new ResizeObserver(fit).observe(document.documentElement)
+      new MutationObserver(() => requestAnimationFrame(fit)).observe(document.getElementById('root'), { childList: true, subtree: true })
+      addEventListener('resize', fit)
+    </script>
+  </body>
+</html>

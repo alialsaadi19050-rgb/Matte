@@ -1,0 +1,42 @@
+{
+  "name": "matte-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "ingest": "node scripts/ingest.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "build:ti84": "bash scripts/ti84/build.sh",
+    "lock": "node scripts/lock.ts",
+    "unlock": "node scripts/unlock.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/source-serif-4": "^5.3.0",
+    "dexie": "^4.4.6",
+    "katex": "^0.19.0",
+    "mathjs": "^15.2.0",
+    "mathlive": "^0.111.1",
+    "pdf-lib": "^1.17.1",
+    "perfect-freehand": "^1.2.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/katex": "^0.16.8",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3"
+  }
+}

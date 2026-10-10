@@ -1,0 +1,137 @@
+/* Grundtema. Färgerna kommer från paletterna i design/palettes.css. */
+:root {
+  --warn: #f3b33d;
+
+  /* Pappret där uppgifterna visas: ljust och lugnt, som boken. */
+  --paper: #f7f4ec;
+  --paper-ink: #1d1d22;
+  --paper-dim: #6b6a66;
+  --paper-line: #e2ddd0;
+
+  --radius: 12px;
+  --font-ui: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-book: 'Source Serif 4 Variable', 'Source Serif 4', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Matte- och figurtext */
+.math-text p {
+  margin: 0 0 0.6em;
+}
+.math-text p:last-child {
+  margin-bottom: 0;
+}
+.math-text ul {
+  margin: 0 0 0.6em;
+  padding-left: 1.3em;
+}
+.math-text .mt-display {
+  margin: 0.4em 0 0.8em;
+  overflow-x: auto;
+}
+.math-error {
+  color: var(--danger);
+  font-family: ui-monospace, monospace;
+  border-bottom: 1px dashed currentColor;
+}
+.mt-table {
+  border-collapse: collapse;
+  margin: 0.4em 0 0.8em;
+  font-size: 0.95em;
+}
+.mt-table th,
+.mt-table td {
+  border: 1px solid var(--paper-line);
+  padding: 0.3em 0.8em;
+  text-align: left;
+}
+.mt-table th {
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.04);
+}
+.mt-table .math-text p {
+  margin: 0;
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-end;
+  margin: 10px 0 14px;
+}
+.figure-svg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.figure-venn {
+  position: relative;
+}
+.figure-venn canvas,
+.figure-venn svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.figure-venn svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+.figure-venn .venn-label,
+.figure-venn .venn-text {
+  stroke: none;
+  fill: currentColor;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  font-family: var(--font-ui);
+}
+.figure-venn .venn-label {
+  font-size: 13px;
+  font-weight: 600;
+}

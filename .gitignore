@@ -1,0 +1,20 @@
+node_modules
+dist
+*.log
+*.tsbuildinfo
+.vendor
+
+# Bokens okrypterade innehåll och fotona av boksidorna publiceras aldrig.
+# Bara den krypterade public/vault.bin läggs i git (se npm run lock).
+public/content/
+
+# TI-84-ROM och andra privata filer
+*.rom
+*.8xp
+*.8xv
+sys84.bin
+
+# Lokala inställningar och hemligheter
+.env
+.env.*
+.claude/settings.local.json
