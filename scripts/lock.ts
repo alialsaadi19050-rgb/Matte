@@ -1,20 +1,16 @@
-// Krypterar bokens innehåll (public/content/data och figures) till public/vault.bin med
-// ditt användarnamn och lösenord. Kör om efter varje ändring i innehållet, eller för att
-// byta lösenord.
+// Krypterar bokens innehåll (public/content/data och figures) till public/vault.bin. Kör om
+// efter varje ändring i innehållet.
 //
-//   npm run lock
+//   npm run lock            låser med samma inloggningar som förut (du loggar in med en av dem)
+//   npm run lock -- --ny    börjar om med en enda ny inloggning (t.ex. om alla lösenord glömts)
 //
-// Användarnamn och lösenord frågas efter i terminalen, eller läses från MATTE_USER och
-// MATTE_PASS. De sparas ingenstans.
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+// Inloggningar läggs till och tas bort med npm run users. Lösenord sparas ingenstans.
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { decryptVault, deriveKey, encryptVault, parseVault } from '../src/vault/crypto.ts'
-import { ask } from './prompt.ts'
+import { makeSlot, newBookKey, type Slot } from '../src/vault/crypto.ts'
+import { askNewLogin, openWithLogin, readVault, ROOT, writeVault } from './vaultfile.ts'
 
-const ROOT = join(import.meta.dirname, '..')
 const CONTENT = join(ROOT, 'public', 'content')
-const OUT = join(ROOT, 'public', 'vault.bin')
-
 const files: Record<string, string> = {}
 for (const dir of ['data', 'figures']) {
   for (const f of readdirSync(join(CONTENT, dir))) {
@@ -22,19 +18,32 @@ for (const dir of ['data', 'figures']) {
   }
 }
 if (!files['data/index.json']) throw new Error('Hittar inte public/content/data/index.json')
+const content = { files, createdAt: new Date().toISOString() }
 
-const user = process.env.MATTE_USER ?? (await ask('Användarnamn: '))
-let password = process.env.MATTE_PASS
-if (!password) {
-  password = await ask('Lösenord: ', true)
-  if ((await ask('Samma lösenord igen: ', true)) !== password) throw new Error('Lösenorden är inte samma.')
+const vault = process.argv.includes('--ny') ? null : readVault()
+let bookKey: Uint8Array
+let slots: Slot[]
+let check: { user: string; password: string }[]
+
+if (vault?.version === 2) {
+  // Samma boknyckel och samma inloggningar som förut.
+  const me = await openWithLogin(vault)
+  bookKey = me.bookKey!
+  slots = vault.slots
+  check = [me]
+} else if (vault?.version === 1) {
+  // Äldre bok med en inloggning: flytta över den till det nya formatet.
+  const me = await openWithLogin(vault, 'din inloggning')
+  bookKey = newBookKey()
+  slots = [await makeSlot(me.user, me.password, bookKey)]
+  check = [me]
+} else {
+  console.log('Välj användarnamn och lösenord för boken.')
+  const me = await askNewLogin()
+  bookKey = newBookKey()
+  slots = [await makeSlot(me.user, me.password, bookKey)]
+  check = [me]
 }
-if (!user.trim()) throw new Error('Användarnamnet får inte vara tomt.')
-if (password.length < 8) throw new Error('Lösenordet måste vara minst 8 tecken.')
 
-const bytes = await encryptVault({ files, createdAt: new Date().toISOString() }, user, password)
-// Kontrollera att det går att låsa upp igen innan filen skrivs.
-const check = await decryptVault(bytes, await deriveKey(user, password, parseVault(bytes).salt))
-if (Object.keys(check.files).length !== Object.keys(files).length) throw new Error('Kontrollen misslyckades.')
-writeFileSync(OUT, bytes)
-console.log(`Klart: ${Object.keys(files).length} filer krypterade till public/vault.bin (${(bytes.length / 1024).toFixed(0)} kB).`)
+const bytes = await writeVault(content, bookKey, slots, check)
+console.log(`Klart: ${Object.keys(files).length} filer krypterade till public/vault.bin (${(bytes.length / 1024).toFixed(0)} kB), ${slots.length} ${slots.length === 1 ? 'inloggning' : 'inloggningar'}.`)

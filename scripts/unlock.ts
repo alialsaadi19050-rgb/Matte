@@ -2,22 +2,13 @@
 // efter git clone. Befintliga filer skrivs över.
 //
 //   npm run unlock
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { decryptVault, deriveKey, parseVault } from '../src/vault/crypto.ts'
-import { ask } from './prompt.ts'
+import { openWithLogin, readVault, ROOT } from './vaultfile.ts'
 
-const ROOT = join(import.meta.dirname, '..')
-const bytes = new Uint8Array(readFileSync(join(ROOT, 'public', 'vault.bin')))
-const user = process.env.MATTE_USER ?? (await ask('Användarnamn: '))
-const password = process.env.MATTE_PASS ?? (await ask('Lösenord: ', true))
-
-let files: Record<string, string>
-try {
-  files = (await decryptVault(bytes, await deriveKey(user, password, parseVault(bytes).salt))).files
-} catch {
-  throw new Error('Fel användarnamn eller lösenord.')
-}
+const vault = readVault()
+if (!vault) throw new Error('Hittar ingen public/vault.bin.')
+const { files } = (await openWithLogin(vault, 'din inloggning')).files
 for (const [path, text] of Object.entries(files)) {
   const out = join(ROOT, 'public', 'content', path)
   mkdirSync(dirname(out), { recursive: true })

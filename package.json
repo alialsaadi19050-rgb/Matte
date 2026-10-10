@@ -12,7 +12,8 @@
     "typecheck": "tsc -b",
     "build:ti84": "bash scripts/ti84/build.sh",
     "lock": "node scripts/lock.ts",
-    "unlock": "node scripts/unlock.ts"
+    "unlock": "node scripts/unlock.ts",
+    "users": "node scripts/users.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

@@ -4,7 +4,7 @@
 //
 // I utvecklingsläget (npm run dev) läses de okrypterade filerna i public/content direkt.
 import { useSyncExternalStore } from 'react'
-import { decryptVault, deriveKey, parseVault } from './crypto.ts'
+import { login as unlockVault, openVault, parseVault, type Unlock } from './crypto.ts'
 
 export type VaultStatus = 'checking' | 'locked' | 'open'
 
@@ -45,8 +45,9 @@ function keyStore<T>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRe
   })
 }
 
-const saveKey = (key: CryptoKey) => keyStore('readwrite', (s) => s.put(key, 'vault'))
-const loadKey = () => keyStore<CryptoKey | undefined>('readonly', (s) => s.get('vault'))
+const saveKey = (u: Unlock) => keyStore('readwrite', (s) => s.put(u, 'vault'))
+// Äldre versioner sparade bara nyckeln (en inloggning, format 1).
+const loadKey = () => keyStore<Unlock | CryptoKey | undefined>('readonly', (s) => s.get('vault')).then((v) => (v instanceof CryptoKey ? { slot: 'v1', key: v } : v))
 const forgetKey = () => keyStore('readwrite', (s) => s.delete('vault'))
 
 /* ---------- Inloggning ---------- */
@@ -61,13 +62,13 @@ async function fetchVault(): Promise<Uint8Array> {
 export async function restoreSession(): Promise<void> {
   if (PLAIN) return
   try {
-    const key = await loadKey()
-    if (key) {
-      files = (await decryptVault(await fetchVault(), key)).files
+    const saved = await loadKey()
+    if (saved) {
+      files = (await openVault(parseVault(await fetchVault()), saved)).files
       return set('open')
     }
   } catch {
-    // Fel nyckel (t.ex. nytt lösenord) eller ingen lagring: logga in igen.
+    // Fel nyckel (nytt lösenord, borttagen inloggning) eller ingen lagring: logga in igen.
     await forgetKey().catch(() => {})
   }
   set('locked')
@@ -80,13 +81,15 @@ export async function login(user: string, password: string): Promise<void> {
   } catch {
     throw new Error(navigator.onLine ? 'Kunde inte hämta innehållet. Försök igen.' : 'Du är offline. Första inloggningen kräver internet.')
   }
-  const key = await deriveKey(user, password, parseVault(bytes).salt)
+  let unlock: Unlock
   try {
-    files = (await decryptVault(bytes, key)).files
+    const res = await unlockVault(parseVault(bytes), user, password)
+    files = res.files.files
+    unlock = res.unlock
   } catch {
     throw new Error('Fel användarnamn eller lösenord.')
   }
-  await saveKey(key).catch(() => {
+  await saveKey(unlock).catch(() => {
     /* utan lagring får du logga in varje gång */
   })
   set('open')

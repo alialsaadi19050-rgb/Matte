@@ -1,3 +1,6 @@
+// Det som lästs från en pipe men inte använts än (flera rader kan komma på en gång).
+let piped = ''
+
 // Frågar efter en rad i terminalen. Med hidden visas inte det du skriver.
 export function ask(question: string, hidden = false): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -5,15 +8,21 @@ export function ask(question: string, hidden = false): Promise<string> {
     stdout.write(question)
     if (!stdin.isTTY) {
       // Ingen terminal (t.ex. inmatning via pipe): läs en rad som den är.
-      let buf = ''
+      const take = () => {
+        const nl = piped.indexOf('\n')
+        if (nl === -1) return false
+        const line = piped.slice(0, nl).replace(/\r$/, '')
+        piped = piped.slice(nl + 1)
+        stdout.write('\n')
+        resolve(line)
+        return true
+      }
+      if (take()) return
       const onData = (d: Buffer) => {
-        buf += d.toString('utf8')
-        const nl = buf.indexOf('\n')
-        if (nl === -1) return
+        piped += d.toString('utf8')
+        if (!take()) return
         stdin.off('data', onData)
         stdin.pause()
-        stdout.write('\n')
-        resolve(buf.slice(0, nl).replace(/\r$/, ''))
       }
       stdin.on('data', onData)
       return

@@ -40,11 +40,29 @@ Den publicerade appen kräver användarnamn och lösenord. Bokens innehåll (upp
 - API-nycklar för Claude och DeepSeek finns bara i din webbläsare och aldrig i koden eller på GitHub.
 - I utvecklingsläget (`npm run dev`) behövs ingen inloggning.
 
-Välj användarnamn och lösenord, eller byt lösenord, så här. Kör om det efter varje ändring i innehållet:
+**Flera inloggningar.** Boken låses med en slumpad boknyckel, och boknyckeln låses en gång per inloggning. Användarnamnen sparas inte i klartext, bara en hash.
+
+Kör om det här efter varje ändring i innehållet. Du loggar in med valfri befintlig inloggning, och alla inloggningar finns kvar:
 
 ```bash
 npm run lock
 ```
+
+Lägg till en inloggning, t.ex. åt en klasskompis (du loggar först in med din egen):
+
+```bash
+npm run users -- add
+```
+
+Ta bort en inloggning. Den som har loggat in med den blir utloggad nästa gång sidan laddas:
+
+```bash
+npm run users -- remove
+```
+
+Om alla lösenord är glömda börjar `npm run lock -- --ny` om med en enda ny inloggning.
+
+I PowerShell skriver du `npm.cmd` i stället för `npm`.
 
 På en ny dator, efter `git clone`, packar du upp innehållet igen för att kunna redigera det:
 
@@ -64,6 +82,7 @@ Appen läggs ut på GitHub Pages automatiskt vid varje push till `main` (`.githu
 | `npm run build` | Bygger en färdig version till `dist/` |
 | `npm run lock` | Krypterar innehållet till `public/vault.bin` med ditt användarnamn och lösenord |
 | `npm run unlock` | Packar upp `public/vault.bin` till `public/content` |
+| `npm run users -- add` / `remove` / `count` | Lägger till, tar bort eller räknar inloggningar |
 
 ## Skrivytan
 
