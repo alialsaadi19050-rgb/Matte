@@ -173,3 +173,48 @@ export interface ContentIndex {
   pages: Record<string, string>
   facitPages: Record<string, string>
 }
+
+/* ---------- Genomgångar ---------- */
+
+/** En del av en genomgång. Alla texter är MathText. */
+export type LessonBlock =
+  /** Vanlig brödtext. */
+  | { type: 'text'; text: string }
+  /** Ett begrepp som förklaras (bokens marginalord). */
+  | { type: 'term'; term: string; text: string }
+  /** En regel eller formel i bokens röda ruta. */
+  | { type: 'rule'; title: string; text: string }
+  /** Ett löst exempel som visas steg för steg. */
+  | { type: 'example'; title: string; prompt: string; figures?: Figure[]; steps: LessonStep[]; answer?: string }
+  /** En fråga att testa sig själv på, med samma rättning som uppgifterna. */
+  | { type: 'check'; prompt: string; figures?: Figure[]; answer: Answer; solution: string; hint?: string }
+  /** En eller flera figurer. */
+  | { type: 'figure'; figures: Figure[]; caption?: string }
+  /** Tips, t.ex. om räknaren. */
+  | { type: 'tip'; text: string }
+  /** Historik eller fördjupning. */
+  | { type: 'aside'; title: string; text: string }
+
+/** Ett steg i ett exempel: text, eventuellt med en figur. */
+export type LessonStep = string | { text: string; figures?: Figure[] }
+
+export interface Lesson {
+  /** T.ex. "ladprincipen". */
+  id: string
+  chapter: number
+  section: string
+  /** Samma delområde som uppgifterna har (Exercise.topic). */
+  topic: string
+  title: string
+  /** En mening om vad genomgången handlar om. */
+  summary: string
+  /** Boksidor genomgången bygger på. */
+  pages: number[]
+  /** Ungefärlig tid i minuter. */
+  minutes: number
+  blocks: LessonBlock[]
+}
+
+export interface LessonFile {
+  lessons: Lesson[]
+}

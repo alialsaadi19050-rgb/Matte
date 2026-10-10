@@ -4,6 +4,8 @@ import { loadContent, type Content } from '../content/load.ts'
 import { CoverArt, Poster, motifFor } from '../design/Cover.tsx'
 import { Bookmark, Check, ChevronLeft, ChevronRight, Flame, Gear, Play, Target } from '../design/icons.tsx'
 import { savedFirst, useBookmarks } from '../bookmarks/bookmarks.ts'
+import { lessonHref, useLessons } from '../lessons/data.ts'
+import { useLessonProgress } from '../lessons/progress.ts'
 import { MathText } from '../ui/MathText.tsx'
 import { Figure } from '../ui/Figure.tsx'
 import { ThemeEditor } from '../design/ThemeEditor.tsx'
@@ -41,6 +43,8 @@ export function markTransition(e: React.MouseEvent<HTMLElement>) {
 export function Library() {
   const content = useContent()
   const bookmarks = useBookmarks()
+  const lessons = useLessons()
+  const lp = useLessonProgress()
   const progress = useProgress(content?.exercises)
   const [settingsOpen, setSettingsOpen] = useState(false)
   if (!content || !progress) return <div className="mk-loading">Laddar …</div>
@@ -67,6 +71,20 @@ export function Library() {
             <Tile key={e.id} ex={e} progress={progress} />
           ))}
         </Row>
+        {lessons && lessons.length > 0 && (
+          <Row title="Lär dig" note="Bokens teori och exempel steg för steg – läs genomgången innan du övar." href="#/lar" variant="posters">
+            {lessons.map((l) => (
+              <a key={l.id} className="mk-poster-btn" href={lessonHref(l.id)} style={{ position: 'relative' }}>
+                <Poster motif={motifFor(l.topic)} seed={`${l.section}-${l.topic}`} kicker="Genomgång" title={l.topic} />
+                {lp[l.id]?.done && (
+                  <span className="mk-badge ok" title="Klar">
+                    <Check size={14} strokeWidth={3} />
+                  </span>
+                )}
+              </a>
+            ))}
+          </Row>
+        )}
         {saved.length > 0 && (
           <Row title="Sparade till senare" note="Tryck på bokmärket på en uppgift för att spara eller ta bort den.">
             {saved.map((e) => (
@@ -118,7 +136,7 @@ export function Library() {
   )
 }
 
-export function Nav({ streak, onSettings, active }: { streak: number; onSettings: () => void; active: 'home' | 'chapter' | 'stats' }) {
+export function Nav({ streak, onSettings, active }: { streak: number; onSettings: () => void; active: 'home' | 'chapter' | 'learn' | 'stats' }) {
   return (
     <header className="mk-nav">
       <a className="mk-logo" href="#/">
@@ -130,6 +148,9 @@ export function Nav({ streak, onSettings, active }: { streak: number; onSettings
         </a>
         <a className={active === 'chapter' ? 'on' : ''} href="#/kapitel/1">
           Kapitel
+        </a>
+        <a className={active === 'learn' ? 'on' : ''} href="#/lar">
+          Lär dig
         </a>
         <a className={active === 'stats' ? 'on' : ''} href="#/statistik">
           Statistik

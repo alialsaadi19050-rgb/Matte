@@ -8,6 +8,7 @@ import './ai.css'
 
 /** Förslag på frågor beroende på var eleven är. */
 function suggestions(c: AskContext): string[] {
+  if (c.kind === 'lesson') return ['Förklara det här enklare', 'Ge mig ett eget exempel', 'Hur vet jag vilken metod jag ska välja?']
   const wrong = c.attempts.some((a) => a.status !== 'correct')
   if (c.solved) return ['Förklara lösningen steg för steg', 'Finns det ett snabbare sätt?', 'Varför fungerar metoden?']
   if (wrong && c.facitShown) return ['Varför blev mitt svar fel?', 'Förklara facit steg för steg', 'Vad ska jag tänka på nästa gång?']

@@ -1,0 +1,504 @@
+/* ---------- Genomgången ---------- */
+.ls {
+  min-height: 100dvh;
+  background:
+    radial-gradient(60% 40% at 15% 0%, var(--bg-tint-1), transparent 70%),
+    radial-gradient(50% 40% at 100% 30%, var(--bg-tint-2), transparent 70%),
+    var(--bg);
+  color: var(--text);
+}
+.ls-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px max(16px, 3vw);
+  background: rgba(var(--scrim-rgb), 0.72);
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 -1px 0 rgba(var(--fg-rgb), 0.08);
+}
+.ls-top-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--text-dim);
+}
+.ls-ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 700;
+  font-size: 13.5px;
+}
+.ls-ask.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.ls-scroll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  transform-origin: left;
+}
+
+.ls-article {
+  display: grid;
+  gap: 22px;
+  width: min(100% - 32px, 760px);
+  margin: 0 auto;
+  padding: 36px 0 120px;
+  font: 400 17.5px/1.65 var(--font-book);
+}
+.ls-article .math-text p {
+  margin: 0 0 0.6em;
+}
+.ls-article .math-text > :last-child {
+  margin-bottom: 0;
+}
+.ls-article .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
+.ls-hero {
+  padding-bottom: 8px;
+}
+.ls-kicker {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent-text);
+  font: 750 12.5px/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ls-hero h1 {
+  margin: 0;
+  font: 800 clamp(34px, 5.5vw, 54px) / 1.02 var(--font-display, var(--font-ui));
+  letter-spacing: -0.035em;
+}
+.ls-summary {
+  margin: 12px 0 0;
+  font-size: 20px;
+  color: var(--text-dim);
+}
+.ls-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 18px 0 0;
+  font: 600 12.5px/1 var(--font-ui);
+}
+.ls-meta span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(var(--fg-rgb), 0.07);
+  color: var(--text-dim);
+}
+
+/* Begrepp: bokens marginalord */
+.ls-term {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 18px;
+  align-items: baseline;
+}
+.ls-term dfn {
+  font: 750 14px/1.4 var(--font-ui);
+  font-style: normal;
+  text-align: right;
+  color: var(--accent-text);
+}
+@media (max-width: 640px) {
+  .ls-term {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .ls-term dfn {
+    text-align: left;
+  }
+}
+
+/* Regel: bokens röda ruta */
+.ls-rule {
+  position: relative;
+  padding: 18px 22px 16px;
+  border-radius: 14px;
+  background: rgba(var(--accent-rgb), 0.07);
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--accent-rgb), 0.55),
+    inset 0 0 0 4px rgba(var(--accent-rgb), 0.06),
+    inset 0 0 0 5.5px rgba(var(--accent-rgb), 0.3);
+  font-size: 18px;
+}
+.ls-rule-title {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent-text);
+  font: 800 13px/1 var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Exempel och testfrågor */
+.ls-example,
+.ls-check {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(var(--fg-rgb), 0.045);
+  box-shadow: inset 0 0 0 1px rgba(var(--fg-rgb), 0.09);
+}
+.ls-example header,
+.ls-check header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ls-example h3 {
+  margin: 0;
+  font: 750 18px/1.3 var(--font-ui);
+}
+.ls-label {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(var(--fg-rgb), 0.08);
+  font: 750 11px/1.4 var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.ls-check .ls-label {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.ls-check.solved {
+  box-shadow: inset 0 0 0 1.5px rgba(var(--accent-rgb), 0.45);
+}
+.ls-check-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--accent-text);
+  font: 700 12.5px/1 var(--font-ui);
+}
+.ls-check .ex-input-row,
+.ls-check .ex-choices {
+  margin-top: 12px;
+  font-family: var(--font-ui);
+}
+.ls-check .ex-field-tools {
+  font-family: var(--font-ui);
+}
+.ls-steps {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.ls-steps li {
+  position: relative;
+  padding: 2px 0 2px 38px;
+  counter-increment: step;
+  animation: ex-in 0.35s var(--ease-out);
+}
+.ls-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 3px;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font: 750 12.5px/1 var(--font-ui);
+}
+.ls-answer {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin: 14px 0 0;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+}
+.ls-answer .math-text p {
+  margin: 0;
+}
+.ls-example-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.ls-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 750 14.5px/1 var(--font-ui);
+  text-decoration: none;
+  box-shadow: 0 10px 30px -12px rgba(var(--accent-rgb), 0.8);
+  transition: transform 0.15s;
+}
+.ls-btn:hover {
+  transform: translateY(-1px);
+}
+.ls-btn.small {
+  padding: 9px 15px;
+  font-size: 13.5px;
+}
+.ls-btn.ghost {
+  background: rgba(var(--fg-rgb), 0.08);
+  color: var(--text);
+  box-shadow: none;
+}
+.ls-btn.ghost[aria-pressed='true'] {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+.ls-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: 650 13.5px/1 var(--font-ui);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ls-link:hover {
+  color: var(--text);
+}
+
+.ls-figure {
+  margin: 0;
+}
+.ls-figure .figures {
+  justify-content: center;
+}
+.ls-figure figcaption {
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 15.5px;
+  text-align: center;
+}
+.ls-example .figures,
+.ls-check .figures,
+.ls-steps .figures {
+  margin: 12px 0 4px;
+}
+
+.ls-tip {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(var(--fg-rgb), 0.05);
+  font-size: 16px;
+}
+.ls-tip svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--accent-text);
+}
+.ls-aside {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(var(--fg-rgb), 0.04);
+  border-left: 3px solid rgba(var(--fg-rgb), 0.2);
+  font-size: 16px;
+  color: var(--text-dim);
+}
+.ls-aside-title {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font: 800 16px/1.3 var(--font-ui);
+}
+
+.ls-end {
+  margin-top: 18px;
+  padding: 26px 24px;
+  border-radius: 20px;
+  background: rgba(var(--fg-rgb), 0.05);
+  box-shadow: inset 0 0 0 1px rgba(var(--fg-rgb), 0.1);
+  font-family: var(--font-ui);
+}
+.ls-end.done {
+  background: rgba(var(--accent-rgb), 0.08);
+  box-shadow: inset 0 0 0 1.5px rgba(var(--accent-rgb), 0.4);
+}
+.ls-end h2 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+.ls-end p {
+  margin: 0 0 18px;
+  color: var(--text-dim);
+  font-size: 15px;
+}
+.ls-end-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* AI-rutan flyter nere till höger */
+.ls-ai {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 40;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 90px);
+  overflow: auto;
+  border-radius: 16px;
+  background: var(--bg-raised);
+  box-shadow: 0 30px 70px -20px rgb(0 0 0 / calc(0.8 * var(--shadow-k)));
+  font-family: var(--font-ui);
+}
+.ls-ai .ai {
+  margin: 0;
+}
+
+/* ---------- Översikten ---------- */
+.li-hero {
+  width: min(100% - 32px, 1200px);
+  margin: 0 auto;
+  padding: 116px 0 12px;
+}
+.li-hero h1 {
+  margin: 0;
+  font: 800 clamp(36px, 6vw, 64px) / 1 var(--font-display, var(--font-ui));
+  letter-spacing: -0.04em;
+}
+.li-hero p {
+  max-width: 640px;
+  margin: 14px 0 22px;
+  color: var(--text-dim);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.li-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.li-section {
+  width: min(100% - 32px, 1200px);
+  margin: 36px auto 0;
+}
+.li-section h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+.li-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 18px;
+}
+.li-card {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(var(--fg-rgb), 0.04);
+  box-shadow: inset 0 0 0 1px rgba(var(--fg-rgb), 0.07);
+}
+.li-card.done {
+  box-shadow: inset 0 0 0 1.5px rgba(var(--accent-rgb), 0.35);
+}
+.li-poster {
+  position: relative;
+  width: 112px;
+}
+.li-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 4px 4px 0;
+}
+.li-title {
+  color: var(--text);
+  font-weight: 750;
+  font-size: 17px;
+  line-height: 1.25;
+  text-decoration: none;
+}
+.li-title:hover {
+  color: var(--accent-text);
+}
+.li-info p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.li-meta {
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.li-practice {
+  margin-top: auto;
+  align-self: flex-start;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(var(--fg-rgb), 0.07);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.li-practice:hover {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+/* Breda formler och figurer får aldrig trycka ut sidan – de scrollar för sig. */
+.ls-article > *,
+.ls-term > *,
+.ls-steps li {
+  min-width: 0;
+}
+.ls-article .math-text {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.ls-article .katex-display {
+  max-width: 100%;
+}
+.ls-article .katex-display > .katex {
+  white-space: nowrap;
+}

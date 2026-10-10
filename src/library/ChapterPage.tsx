@@ -5,7 +5,9 @@ import { ThemeEditor } from '../design/ThemeEditor.tsx'
 import { SettingsDialog } from '../settings/SettingsDialog.tsx'
 import { recommend, useProgress, type Status } from '../progress/progress.ts'
 import { useBookmarks } from '../bookmarks/bookmarks.ts'
-import { Play } from '../design/icons.tsx'
+import { lessonHref, useLessons } from '../lessons/data.ts'
+import { useLessonProgress } from '../lessons/progress.ts'
+import { ChevronRight, Play } from '../design/icons.tsx'
 import { exerciseHref, markTransition, Nav, sectionLabel, Tile, useContent } from './Library.tsx'
 
 type Filter = Status | 'all' | 'saved'
@@ -28,6 +30,8 @@ export function ChapterPage({ chapterId }: { chapterId: number }) {
   const content = useContent()
   const progress = useProgress(content?.exercises)
   const bookmarks = useBookmarks()
+  const lessons = useLessons()
+  const lp = useLessonProgress()
   const initial = useMemo(readQuery, [])
   const [section, setSection] = useState<string | null>(initial.section)
   const [topic, setTopic] = useState<string | null>(initial.topic || null)
@@ -157,6 +161,20 @@ export function ChapterPage({ chapterId }: { chapterId: number }) {
           )}
         </div>
 
+        {(() => {
+          const lesson = topic ? lessons?.find((l) => l.topic === topic) : null
+          return (
+            lesson && (
+              <a className={`ch-lesson ${lp[lesson.id]?.done ? 'done' : ''}`} href={lessonHref(lesson.id)}>
+                <span className="ls-label">Genomgång</span>
+                <span>
+                  <b>{lesson.title}</b> – {lp[lesson.id]?.done ? 'repetera teorin och exemplen.' : 'läs teorin och exemplen innan du börjar.'}
+                </span>
+                <ChevronRight size={16} />
+              </a>
+            )
+          )
+        })()}
         {groups.map(({ s, items }) => (
           <section key={s.section} className="ch-group">
             <h2>{sectionLabel(s)}</h2>

@@ -147,6 +147,19 @@ Välj AI och klistra in din egen nyckel under **Inställningar → AI**. Appen t
 - DeepSeek behandlar frågorna på servrar i Kina.
 - Det kräver internet. Resten av appen fungerar offline som vanligt.
 
+## Lär dig (genomgångar)
+
+Under **Lär dig** (`#/lar`) finns en genomgång per delområde, byggd på bokens teorisidor: Lådprincipen, Multiplikations- och additionsprincipen, Permutationer, Kombinationer, Sannolikhet, Binomialsatsen, Mängder, Mängdoperationer och Venndiagram.
+
+- Begrepp, bokens regelrutor och figurer (träddiagram, Pascals triangel, Venndiagram) är omritade.
+- **Exemplen** visas steg för steg: tryck **Nästa steg**, eller **Visa allt**.
+- **Testa dig själv**-frågor rättas precis som uppgifterna, med ledtråd och lösning.
+- **Fråga AI** uppe till höger förklarar teorin med egna ord och nya exempel.
+- När du är klar: **Markera som klar** och **Öva på uppgifterna** i samma delområde.
+- Uppgiftssidan har en länk till delområdets genomgång, och kapitelsidan visar den när ett delområde är valt.
+
+Genomgångarna ligger i `public/content/data/lessons.json` och figurerna i `public/content/figures/lektion-*.svg`. De krypteras med resten av boken av `npm run lock`.
+
 ## Bibliotek och statistik
 
 - **Startsidan** föreslår vad du ska räkna härnäst: en påbörjad uppgift, annars nästa nya. Raderna visar "Fortsätt där du slutade", "Uppgifter du missat" (minst tre missar, eller självbedömd som fel), en affisch per delområde och en rad per avsnitt.

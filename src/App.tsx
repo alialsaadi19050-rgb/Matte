@@ -8,6 +8,8 @@ import { restoreSession, useVaultStatus } from './vault/vault.ts'
 
 // Uppgiftssidan (skrivyta, mattefält) och granskningen laddas först när de behövs.
 const ExercisePage = lazy(() => import('./exercise/ExercisePage.tsx').then((m) => ({ default: m.ExercisePage })))
+const LessonPage = lazy(() => import('./lessons/LessonPage.tsx').then((m) => ({ default: m.LessonPage })))
+const LessonsIndex = lazy(() => import('./lessons/LessonsIndex.tsx').then((m) => ({ default: m.LessonsIndex })))
 const ReviewPage = lazy(() => import('./review/ReviewPage.tsx').then((m) => ({ default: m.ReviewPage })))
 const loading = <div className="mk-loading">Laddar …</div>
 
@@ -53,6 +55,18 @@ function Routes() {
     return (
       <Suspense fallback={loading}>
         <ExercisePage id={decodeURIComponent(route.slice('uppgift/'.length))} />
+      </Suspense>
+    )
+  if (route === 'lar')
+    return (
+      <Suspense fallback={loading}>
+        <LessonsIndex />
+      </Suspense>
+    )
+  if (route.startsWith('lar/'))
+    return (
+      <Suspense fallback={loading}>
+        <LessonPage key={route} id={decodeURIComponent(route.slice('lar/'.length))} />
       </Suspense>
     )
   if (route.startsWith('kapitel')) return <ChapterPage key={location.hash} chapterId={Number(route.split('/')[1] ?? 1) || 1} />

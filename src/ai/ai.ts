@@ -3,7 +3,7 @@
 // (localStorage) och följer inte med i backupen.
 import { useSyncExternalStore } from 'react'
 import type Anthropic from '@anthropic-ai/sdk'
-import type { Exercise, Part } from '../content/types.ts'
+import type { Exercise, Lesson, Part } from '../content/types.ts'
 
 export type Provider = 'claude' | 'deepseek'
 
@@ -191,13 +191,23 @@ Så här svarar du:
 - Om facit inte är visat och uppgiften inte är löst: avslöja inte slutsvaret. Ge en ledtråd eller en fråga som hjälper eleven vidare, och erbjud att visa hela lösningen om eleven vill.
 - Om facit är visat eller uppgiften löst: förklara hela lösningen steg för steg.
 - Om du tror att bokens facit är fel, säg det och förklara varför.
+- Ibland läser eleven en genomgång (teori och exempel) i stället för en uppgift. Förklara då begreppen med egna ord, gärna med ett nytt enkelt exempel, och koppla till genomgångens regler.
 
 Formatering (texten visas med en enkel renderare):
 - Skriv all matte med KaTeX mellan $…$, t.ex. $\\binom{5}{2} = 10$ eller $A \\cap B$. Använd $$…$$ för en egen rad. Använd aldrig \\( \\) eller \\[ \\].
 - Stycken skiljs med en tom rad. Punktlistor skrivs med "- " i början av varje rad. **fet** och *kursiv* fungerar.
 - Inga rubriker, inga tabeller och inga kodblock.`
 
-export interface AskContext {
+/** Frågor om en uppgift eller om en genomgång. */
+export type AskContext = TaskContext | LessonContext
+
+export interface LessonContext {
+  kind: 'lesson'
+  lesson: Lesson
+}
+
+export interface TaskContext {
+  kind?: 'task'
   ex: Exercise
   part: Part
   /** Elevens tidigare svar på den här deluppgiften, äldst först. */
@@ -212,6 +222,7 @@ const STATUS: Record<string, string> = { correct: 'rätt', partial: 'nästan rä
 
 /** Beskriver uppgiften för Claude. Matte står som i boken, med $…$. */
 export function describeTask(c: AskContext): string {
+  if (c.kind === 'lesson') return describeLesson(c.lesson)
   const { ex, part } = c
   const lines = [`Uppgift ${ex.number} (avsnitt ${ex.section}${ex.topic ? `, ${ex.topic}` : ''}, nivå ${ex.level.toUpperCase()}${ex.calculator === false ? ', utan räknare' : ''}).`, '', ex.prompt]
   if (ex.parts.length > 1 || part.label) lines.push('', `Deluppgift ${part.label ?? ''}: ${part.prompt ?? ''}`)
@@ -228,6 +239,20 @@ export function describeTask(c: AskContext): string {
   }
   if (c.feedback) lines.push(`Appens rättning sa: ”${c.feedback.message}”${c.feedback.hint ? ` Tips: ”${c.feedback.hint}”` : ''}`)
   lines.push(c.solved ? 'Eleven har löst uppgiften.' : c.facitShown ? 'Eleven har tittat på facit.' : 'Eleven har inte sett facit än – avslöja inte slutsvaret.')
+  return lines.join('\n')
+}
+
+/** Genomgångens text i korthet: begrepp, regler och exempel. */
+function describeLesson(l: Lesson): string {
+  const lines = [`Eleven läser genomgången ”${l.title}” (avsnitt ${l.section}, boksidor ${l.pages.join(', ')}). Den innehåller:`, '']
+  for (const b of l.blocks) {
+    if (b.type === 'text' || b.type === 'tip') lines.push(b.text)
+    else if (b.type === 'term') lines.push(`Begrepp – ${b.term}: ${b.text}`)
+    else if (b.type === 'rule') lines.push(`Regel – ${b.title}: ${b.text}`)
+    else if (b.type === 'example') lines.push(`Exempel – ${b.title}: ${b.prompt}\nLösning: ${b.steps.map((s) => (typeof s === 'string' ? s : s.text)).join(' ')}`)
+    else if (b.type === 'check') lines.push(`Testfråga: ${b.prompt} (lösning: ${b.solution})`)
+    lines.push('')
+  }
   return lines.join('\n')
 }
 

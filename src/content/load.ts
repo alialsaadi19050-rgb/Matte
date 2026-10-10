@@ -1,4 +1,4 @@
-import type { ContentIndex, Exercise, SectionFile } from './types.ts'
+import type { ContentIndex, Exercise, Lesson, LessonFile, SectionFile } from './types.ts'
 import { contentText } from '../vault/vault.ts'
 
 export interface Content {
@@ -33,4 +33,12 @@ export async function saveExercise(ex: Exercise): Promise<void> {
     const details = body.issues?.map((i: { where: string; message: string }) => `${i.where}: ${i.message}`).join('\n')
     throw new Error([body.error ?? `Sparandet misslyckades (${res.status})`, details].filter(Boolean).join('\n'))
   }
+}
+
+let lessonsPromise: Promise<Lesson[]> | null = null
+
+/** Genomgångarna (bokens teori och exempel), i bokens ordning. */
+export function loadLessons(): Promise<Lesson[]> {
+  lessonsPromise ??= contentText('data/lessons.json').then((t) => (JSON.parse(t) as LessonFile).lessons)
+  return lessonsPromise
 }

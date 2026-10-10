@@ -35,7 +35,7 @@ function playChime(kind: 'correct' | 'wrong') {
 }
 
 /** Mängder och mängduttryck skrivs lättast som text med knappar för symbolerna. */
-function inputKind(a: Answer): { mode: 'math' | 'text' | 'buttons' | 'self'; symbols?: string[]; placeholder?: string } {
+export function inputKind(a: Answer): { mode: 'math' | 'text' | 'buttons' | 'self'; symbols?: string[]; placeholder?: string } {
   switch (a.type) {
     case 'self':
       return { mode: 'self' }

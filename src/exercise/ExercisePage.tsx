@@ -10,6 +10,7 @@ import { actionForEvent, S620_ASPECT, updateSettings, useSettings } from '../set
 import { SettingsDialog } from '../settings/SettingsDialog.tsx'
 import { ThemeEditor } from '../design/ThemeEditor.tsx'
 import { toggleBookmark, useBookmarks } from '../bookmarks/bookmarks.ts'
+import { lessonHref, useLessons } from '../lessons/data.ts'
 import '../library/library.css'
 import './exercise.css'
 
@@ -20,6 +21,7 @@ export function ExercisePage({ id }: { id: string }) {
   const [content, setContent] = useState<Content | null>(null)
   const settings = useSettings()
   const bookmarks = useBookmarks()
+  const lessons = useLessons()
   const [problemOpen, setProblemOpen] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [calcOpen, setCalcOpen] = useState(false)
@@ -179,6 +181,16 @@ export function ExercisePage({ id }: { id: string }) {
                 </ol>
               </div>
               <Figures figures={ex.figures} />
+              {(() => {
+                const lesson = lessons?.find((l) => l.topic === ex.topic)
+                return (
+                  lesson && (
+                    <a className="ex-lesson" href={lessonHref(lesson.id)} title="Läs bokens teori och exempel">
+                      Genomgång: {lesson.title}
+                    </a>
+                  )
+                )
+              })()}
             </div>
           </section>
 
