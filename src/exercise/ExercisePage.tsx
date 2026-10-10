@@ -11,6 +11,8 @@ import { SettingsDialog } from '../settings/SettingsDialog.tsx'
 import { ThemeEditor } from '../design/ThemeEditor.tsx'
 import { toggleBookmark, useBookmarks } from '../bookmarks/bookmarks.ts'
 import { lessonHref, useLessons } from '../lessons/data.ts'
+import { attemptsFor, currentRound, startRedo } from '../storage/db.ts'
+import { endRedoSession, getRedoSession, markRedoStarted } from './redoSession.ts'
 import '../library/library.css'
 import './exercise.css'
 
@@ -27,6 +29,10 @@ export function ExercisePage({ id }: { id: string }) {
   const [calcOpen, setCalcOpen] = useState(false)
   const ink = useRef<InkSurfaceHandle>(null)
   const answers = useRef<HTMLElement>(null)
+  /** Ökar vid ”gör om”, så att svarspanelen börjar om. */
+  const [round, setRound] = useState(0)
+  const session = useMemo(getRedoSession, [id])
+  const inSession = !!session?.queue.includes(id)
 
   useEffect(() => {
     loadContent().then(setContent)
@@ -35,8 +41,32 @@ export function ExercisePage({ id }: { id: string }) {
   const { ex, prev, next } = useMemo(() => {
     const list = content?.exercises ?? []
     const i = list.findIndex((e) => e.id === id)
+    // I en repetition går Nästa och Föregående genom repetitionens uppgifter.
+    if (session && inSession) {
+      const q = session.queue.indexOf(id)
+      const find = (qid?: string) => list.find((e) => e.id === qid)
+      return { ex: list[i], prev: find(session.queue[q - 1]), next: find(session.queue[q + 1]) }
+    }
     return { ex: list[i], prev: list[i - 1], next: list[i + 1] }
-  }, [content, id])
+  }, [content, id, session, inSession])
+
+  const redo = async (blank: boolean) => {
+    await startRedo(id)
+    if (blank) ink.current?.clear()
+    setRound((r) => r + 1)
+  }
+
+  // I en repetition börjar varje uppgift om automatiskt, med tom skrivyta, första gången du kommer dit.
+  useEffect(() => {
+    // Läs om sessionen här (inte från useMemo), så att uppgiften bara börjar om en gång.
+    const s = getRedoSession()
+    if (!s?.queue.includes(id) || s.started.includes(id)) return
+    markRedoStarted(id)
+    attemptsFor(id).then((all) => {
+      if (currentRound(all).length) redo(true)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, inSession])
 
   // Kortkommandon. Ritplattans snabbknappar skickar samma tangenter.
   useEffect(() => {
@@ -118,6 +148,18 @@ export function ExercisePage({ id }: { id: string }) {
         <a className="ex-back" href={`#/kapitel/${ex.chapter}?avsnitt=${encodeURIComponent(ex.section)}`}>
           <ChevronLeft size={18} /> {section ? (section.section.includes('.') ? `${section.section} ${section.title}` : section.title) : 'Tillbaka'}
         </a>
+        {inSession && (
+          <button
+            className="ex-redo-end"
+            onClick={() => {
+              endRedoSession()
+              location.hash = '#/'
+            }}
+            title="Avsluta repetitionen"
+          >
+            Avsluta repetition
+          </button>
+        )}
         <div className="ex-title">
           <span className="ex-num" style={{ viewTransitionName: 'ex-num' }}>
             {ex.number}
@@ -197,7 +239,14 @@ export function ExercisePage({ id }: { id: string }) {
           <InkSurface ref={ink} exerciseId={ex.id} title={`Uppgift ${ex.number}`} paper={settings.paper} className="ex-ink" style={zoneStyle} />
         </main>
 
-        <AnswerPanel key={ex.id} ex={ex} panelRef={answers} next={next} />
+        <AnswerPanel
+          key={`${ex.id}-${round}`}
+          ex={ex}
+          panelRef={answers}
+          next={next}
+          onRedo={redo}
+          redoLabel={inSession && session ? `Repetition ${session.queue.indexOf(id) + 1} av ${session.queue.length}${next ? '' : ' – sista uppgiften!'}` : undefined}
+        />
       </div>
 
       <Calculator open={calcOpen} onClose={() => setCalcOpen(false)} noCalculator={ex.calculator === false} />

@@ -1080,3 +1080,20 @@ a.stp-row:hover {
 .ch-lesson:hover {
   box-shadow: inset 0 0 0 1.5px rgba(var(--accent-rgb), 0.7);
 }
+
+/* Starta repetition i raden Gör om */
+.mk-redo-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 750;
+}
+.mk-redo-start:hover {
+  filter: brightness(1.08);
+}

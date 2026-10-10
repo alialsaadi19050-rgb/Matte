@@ -59,3 +59,32 @@ describe('framsteg', () => {
     expect(recommend(list, empty).id).toBe('1')
   })
 })
+
+describe('gör om', () => {
+  const list = [ex('1'), ex('2')]
+  it('fel någon gång → ska göras om, även om den blev rätt till slut', () => {
+    const p = computeProgress(list, [at('1', 0, 'incorrect', NOW), at('1', 0, 'correct', NOW + 1), at('2', 0, 'correct', NOW)], [], NOW)
+    expect(p.byExercise['1']).toMatchObject({ status: 'correct', wrong: 1, needsRedo: true, redos: 0 })
+    expect(p.byExercise['2']).toMatchObject({ wrong: 0, needsRedo: false })
+  })
+
+  it('en ny omgång börjar om statusen men behåller felen i historiken', () => {
+    const p = computeProgress(list, [at('1', 0, 'incorrect', NOW), at('1', 0, 'correct', NOW + 1), at('1', -1, 'redo', NOW + 2)], [], NOW)
+    expect(p.byExercise['1']).toMatchObject({ status: 'attempted', done: 0, wrong: 1, redos: 1, needsRedo: true })
+  })
+
+  it('felfritt omgjord → försvinner från listan', () => {
+    const p = computeProgress(list, [at('1', 0, 'incorrect', NOW), at('1', -1, 'redo', NOW + 2), at('1', 0, 'correct', NOW + 3)], [], NOW)
+    expect(p.byExercise['1']).toMatchObject({ status: 'correct', needsRedo: false })
+  })
+
+  it('fel igen i omgjorda omgången → ligger kvar', () => {
+    const p = computeProgress(list, [at('1', 0, 'incorrect', NOW), at('1', -1, 'redo', NOW + 2), at('1', 0, 'incorrect', NOW + 3), at('1', 0, 'correct', NOW + 4)], [], NOW)
+    expect(p.byExercise['1']).toMatchObject({ status: 'correct', wrong: 2, needsRedo: true })
+  })
+
+  it('rätt på första försöket räknas per omgång', () => {
+    const p = computeProgress([ex('1')], [at('1', 0, 'incorrect', NOW), at('1', 0, 'correct', NOW + 1), at('1', -1, 'redo', NOW + 2), at('1', 0, 'correct', NOW + 3)], [], NOW)
+    expect(p.accuracy).toBe(0.5)
+  })
+})

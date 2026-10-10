@@ -3,7 +3,8 @@ import Dexie, { type EntityTable } from 'dexie'
 import type { Drawing } from '../canvas/types.ts'
 import { markDirty } from '../sync/changes.ts'
 
-export type AttemptStatus = 'correct' | 'partial' | 'incorrect'
+/** 'redo' är en markör: du började om uppgiften. Försöken före den räknas till en tidigare omgång. */
+export type AttemptStatus = 'correct' | 'partial' | 'incorrect' | 'redo'
 
 export interface Attempt {
   id?: number
@@ -72,4 +73,16 @@ export async function recordAttempt(a: Omit<Attempt, 'id' | 'at' | 'uid'>): Prom
 
 export async function attemptsFor(exerciseId: string): Promise<Attempt[]> {
   return db.attempts.where('exerciseId').equals(exerciseId).sortBy('at')
+}
+
+/** Försöken i den pågående omgången: allt efter den senaste ”gör om”-markören. */
+export function currentRound(attempts: Attempt[]): Attempt[] {
+  const sorted = [...attempts].sort((a, b) => a.at - b.at)
+  const last = sorted.findLastIndex((a) => a.status === 'redo')
+  return sorted.slice(last + 1)
+}
+
+/** Börjar om en uppgift. Tidigare försök finns kvar i statistiken. */
+export async function startRedo(exerciseId: string): Promise<void> {
+  await recordAttempt({ exerciseId, part: -1, label: null, input: '', status: 'redo', self: false, hintUsed: false })
 }

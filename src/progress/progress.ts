@@ -15,6 +15,12 @@ export interface ExerciseProgress {
   lastAt: number
   /** När sista deluppgiften blev löst. */
   solvedAt?: number
+  /** Antal felaktiga försök, i alla omgångar. */
+  wrong: number
+  /** Antal gånger du gjort om uppgiften. */
+  redos: number
+  /** Du har fått fel någon gång och inte gjort om den felfritt än. */
+  needsRedo: boolean
 }
 
 export interface SectionStats {
@@ -65,22 +71,36 @@ export function computeProgress(exercises: Exercise[], attempts: Attempt[], draw
   const sectionFirst = new Map<string, { tries: number; correct: number }>()
 
   for (const ex of exercises) {
-    const list = (byEx.get(ex.id) ?? []).sort((a, b) => a.at - b.at)
-    const lastAt = Math.max(list.at(-1)?.at ?? 0, drawn.get(ex.id) ?? 0)
+    const all = (byEx.get(ex.id) ?? []).sort((a, b) => a.at - b.at)
+    const lastAt = Math.max(all.at(-1)?.at ?? 0, drawn.get(ex.id) ?? 0)
+    // Dela upp i omgångar vid varje ”gör om”. Statusen gäller den pågående omgången.
+    const rounds: Attempt[][] = [[]]
+    for (const a of all) {
+      if (a.status === 'redo') rounds.push([])
+      else rounds.at(-1)!.push(a)
+    }
+    const list = rounds.at(-1)!
+    // Rätt på första försöket räknas i varje omgång, så att det syns när du blivit säkrare.
+    for (const round of rounds) {
+      ex.parts.forEach((_, i) => {
+        const first = round.find((a) => a.part === i)
+        if (!first) return
+        const sec = sectionFirst.get(ex.section) ?? { tries: 0, correct: 0 }
+        sec.tries++
+        firstTries++
+        if (first.status === 'correct') {
+          sec.correct++
+          firstCorrect++
+        }
+        sectionFirst.set(ex.section, sec)
+      })
+    }
     let solvedParts = 0
     let missedPart = false
     let solvedAt = 0
     ex.parts.forEach((_, i) => {
       const mine = list.filter((a) => a.part === i)
       if (!mine.length) return
-      const sec = sectionFirst.get(ex.section) ?? { tries: 0, correct: 0 }
-      sec.tries++
-      firstTries++
-      if (mine[0].status === 'correct') {
-        sec.correct++
-        firstCorrect++
-      }
-      sectionFirst.set(ex.section, sec)
       const win = mine.find((a) => a.status === 'correct')
       if (win) {
         solvedParts++
@@ -91,7 +111,11 @@ export function computeProgress(exercises: Exercise[], attempts: Attempt[], draw
     })
     const done = solvedParts / ex.parts.length
     const status: Status = done === 1 ? 'correct' : missedPart ? 'missed' : lastAt ? 'attempted' : 'new'
-    byExercise[ex.id] = { status, done, lastAt, solvedAt: done === 1 ? solvedAt : undefined }
+    const isWrong = (a: Attempt) => a.status === 'incorrect' || a.status === 'partial'
+    const wrong = all.filter(isWrong).length
+    const redos = rounds.length - 1
+    const cleanRedo = redos > 0 && done === 1 && !list.some(isWrong)
+    byExercise[ex.id] = { status, done, lastAt, solvedAt: done === 1 ? solvedAt : undefined, wrong, redos, needsRedo: wrong > 0 && !cleanRedo }
   }
 
   // Dagar i rad: räknas bakåt från idag (eller igår, om du inte hunnit räkna idag än).

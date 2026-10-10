@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { Answer, Exercise, Part } from '../content/types.ts'
 import { checkAnswer, type CheckStatus } from '../check/check.ts'
 import { MathInput, type MathInputHandle } from '../check/MathInput.tsx'
-import { attemptsFor, recordAttempt, type Attempt } from '../storage/db.ts'
+import { attemptsFor, currentRound, recordAttempt, type Attempt } from '../storage/db.ts'
 import { MathText } from '../ui/MathText.tsx'
 import { Figures } from '../ui/Figure.tsx'
 import { Check, ChevronRight, Lightbulb, Sparkle } from '../design/icons.tsx'
@@ -52,12 +52,16 @@ export function inputKind(a: Answer): { mode: 'math' | 'text' | 'buttons' | 'sel
   }
 }
 
-export function AnswerPanel({ ex, panelRef, next }: { ex: Exercise; panelRef: React.RefObject<HTMLElement | null>; next?: Exercise }) {
+export function AnswerPanel({ ex, panelRef, next, onRedo, redoLabel }: { ex: Exercise; panelRef: React.RefObject<HTMLElement | null>; next?: Exercise; onRedo?: (blank: boolean) => void; redoLabel?: string }) {
   const [history, setHistory] = useState<Attempt[] | null>(null)
   const [solved, setSolved] = useState<Set<number>>(new Set())
+  const [confirmRedo, setConfirmRedo] = useState(false)
+  const [pastWrong, setPastWrong] = useState(0)
 
   useEffect(() => {
-    attemptsFor(ex.id).then((a) => {
+    attemptsFor(ex.id).then((all) => {
+      const a = currentRound(all)
+      setPastWrong(all.filter((x) => x.status === 'incorrect' || x.status === 'partial').length)
       setHistory(a)
       setSolved(new Set(a.filter((x) => x.status === 'correct').map((x) => x.part)))
     })
@@ -70,7 +74,32 @@ export function AnswerPanel({ ex, panelRef, next }: { ex: Exercise; panelRef: Re
         <span>
           {solved.size} av {ex.parts.length} klara
         </span>
+        {onRedo && history && (history.length > 0 || pastWrong > 0) && (
+          <button className="ex-redo" onClick={() => setConfirmRedo((c) => !c)} aria-expanded={confirmRedo} title="Börja om uppgiften från början">
+            ↺ Gör om
+          </button>
+        )}
       </div>
+      {confirmRedo && onRedo && (
+        <div className="ex-redo-confirm">
+          <p>
+            <b>Gör om uppgiften?</b> Dina svar nollställs och facit döljs. Tidigare försök finns kvar i statistiken{pastWrong ? ` (${pastWrong} fel hittills)` : ''}.
+          </p>
+          <div>
+            <button className="ex-check" onClick={() => onRedo(true)}>
+              Med tom skrivyta
+            </button>
+            <button className="ex-check ghost" onClick={() => onRedo(false)}>
+              Behåll skrivytan
+            </button>
+            <button className="ex-redo-cancel" onClick={() => setConfirmRedo(false)}>
+              Avbryt
+            </button>
+          </div>
+          <p className="ex-redo-note">Tom skrivyta går att ångra med Ctrl+Z.</p>
+        </div>
+      )}
+      {redoLabel && <p className="ex-redo-banner">{redoLabel}</p>}
       {history &&
         ex.parts.map((p, i) => (
           <AnswerField

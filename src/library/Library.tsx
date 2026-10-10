@@ -5,6 +5,7 @@ import { CoverArt, Poster, motifFor } from '../design/Cover.tsx'
 import { Bookmark, Check, ChevronLeft, ChevronRight, Flame, Gear, Play, Target } from '../design/icons.tsx'
 import { savedFirst, useBookmarks } from '../bookmarks/bookmarks.ts'
 import { lessonHref, useLessons } from '../lessons/data.ts'
+import { startRedoSession } from '../exercise/redoSession.ts'
 import { useLessonProgress } from '../lessons/progress.ts'
 import { MathText } from '../ui/MathText.tsx'
 import { Figure } from '../ui/Figure.tsx'
@@ -56,7 +57,8 @@ export function Library() {
     ...exercises.filter((e) => st(e) === 'attempted').sort((a, b) => progress.byExercise[b.id].lastAt - progress.byExercise[a.id].lastAt),
     ...exercises.slice(Math.max(0, exercises.indexOf(featured))).filter((e) => st(e) === 'new').slice(0, 6),
   ].filter((e, i, all) => all.indexOf(e) === i)
-  const missed = exercises.filter((e) => st(e) === 'missed')
+  // Allt du fått fel på någon gång och inte gjort om felfritt: mest missade först.
+  const redo = exercises.filter((e) => progress.byExercise[e.id].needsRedo).sort((a, b) => progress.byExercise[b.id].wrong - progress.byExercise[a.id].wrong || progress.byExercise[b.id].lastAt - progress.byExercise[a.id].lastAt)
   const saved = savedFirst(exercises, bookmarks)
   const topics = [...new Map(exercises.map((e) => [`${e.section}|${e.topic}`, e])).values()]
 
@@ -92,9 +94,17 @@ export function Library() {
             ))}
           </Row>
         )}
-        {missed.length > 0 && (
-          <Row title="Uppgifter du missat" note="Prova igen – andra gången sitter det oftare.">
-            {missed.map((e) => (
+        {redo.length > 0 && (
+          <Row
+            title="Gör om"
+            note="Uppgifter du fått fel på. Gör om dem utan fel så försvinner de härifrån."
+            meta={
+              <button className="mk-redo-start" onClick={() => startRedoSession(redo.map((e) => e.id))}>
+                <Play size={14} /> Starta repetition ({redo.length})
+              </button>
+            }
+          >
+            {redo.map((e) => (
               <Tile key={e.id} ex={e} progress={progress} />
             ))}
           </Row>
@@ -332,7 +342,7 @@ export function Tile({ ex, progress }: { ex: Exercise; progress: Progress }) {
             <Check size={14} strokeWidth={3} />
           </span>
         )}
-        {p.status === 'missed' && <span className="mk-badge miss">Igen</span>}
+        {p.status !== 'correct' && p.needsRedo && <span className="mk-badge miss">{p.wrong} fel</span>}
         {saved && (
           <span className="mk-saved" title="Sparad till senare">
             <Bookmark size={14} filled />

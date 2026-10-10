@@ -194,9 +194,17 @@ Under **Lär dig** (`#/lar`) finns en genomgång per delområde, byggd på boken
 
 Genomgångarna ligger i `public/content/data/lessons.json` och figurerna i `public/content/figures/lektion-*.svg`. De krypteras med resten av boken av `npm run lock`.
 
+## Gör om det du fått fel på
+
+- Raden **Gör om** på startsidan visar alla uppgifter du fått fel på någon gång, mest missade först. Brickan visar hur många fel.
+- **Starta repetition** tar dig igenom dem i tur och ordning. Varje uppgift börjar om automatiskt med tom skrivyta (går att ångra med Ctrl+Z), och **Nästa** går till nästa uppgift i repetitionen.
+- På varje uppgift finns **↺ Gör om** i svarspanelen: välj tom skrivyta eller behåll den.
+- Svaren nollställs men statistiken sparas. Gör du om uppgiften utan fel försvinner den från listan.
+- Kapitelsidan har filtret **Gör om**.
+
 ## Bibliotek och statistik
 
-- **Startsidan** föreslår vad du ska räkna härnäst: en påbörjad uppgift, annars nästa nya. Raderna visar "Fortsätt där du slutade", "Uppgifter du missat" (minst tre missar, eller självbedömd som fel), en affisch per delområde och en rad per avsnitt.
+- **Startsidan** föreslår vad du ska räkna härnäst: en påbörjad uppgift, annars nästa nya. Raderna visar "Fortsätt där du slutade", "Gör om" (allt du fått fel på någon gång, mest missade först), en affisch per delområde och en rad per avsnitt.
 - **Kapitelsidan** (`#/kapitel/1`) har framsteg per avsnitt och filter för status, nivå och delområde.
 - **Statistiken** (`#/statistik`) visar dagar i rad, lösta uppgifter den här veckan, andel rätt på första försöket och framsteg per avsnitt och nivå.
 

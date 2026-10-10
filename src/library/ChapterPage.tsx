@@ -10,7 +10,7 @@ import { useLessonProgress } from '../lessons/progress.ts'
 import { ChevronRight, Play } from '../design/icons.tsx'
 import { exerciseHref, markTransition, Nav, sectionLabel, Tile, useContent } from './Library.tsx'
 
-type Filter = Status | 'all' | 'saved'
+type Filter = Status | 'all' | 'saved' | 'redo'
 
 const STATUS_FILTERS: { id: Filter; label: string }[] = [
   { id: 'all', label: 'Alla' },
@@ -18,6 +18,7 @@ const STATUS_FILTERS: { id: Filter; label: string }[] = [
   { id: 'attempted', label: 'Påbörjade' },
   { id: 'missed', label: 'Missade' },
   { id: 'correct', label: 'Klara' },
+  { id: 'redo', label: 'Gör om' },
   { id: 'saved', label: 'Sparade' },
 ]
 
@@ -46,11 +47,12 @@ export function ChapterPage({ chapterId }: { chapterId: number }) {
   const share = all.length ? solved / all.length : 0
   const next = recommend(all, progress)
 
+  const matches = (id: string, f: Filter) => (f === 'saved' ? !!bookmarks[id] : f === 'redo' ? progress.byExercise[id].needsRedo : progress.byExercise[id].status === f)
   const visible = all.filter(
     (e) =>
       (!section || e.section === section) &&
       (!topic || e.topic === topic) &&
-      (status === 'all' || (status === 'saved' ? !!bookmarks[e.id] : progress.byExercise[e.id].status === status)) &&
+      (status === 'all' || matches(e.id, status)) &&
       (!levels.size || levels.has(e.level)),
   )
   const topics = [...new Set(all.filter((e) => !section || e.section === section).map((e) => e.topic).filter(Boolean))] as string[]
@@ -127,7 +129,7 @@ export function ChapterPage({ chapterId }: { chapterId: number }) {
             {STATUS_FILTERS.map((f) => (
               <button key={f.id} className={status === f.id ? 'on' : ''} onClick={() => setStatus(f.id)} aria-pressed={status === f.id}>
                 {f.label}
-                {f.id !== 'all' && <i>{all.filter((e) => (f.id === 'saved' ? !!bookmarks[e.id] : progress.byExercise[e.id].status === f.id) && (!section || e.section === section)).length}</i>}
+                {f.id !== 'all' && <i>{all.filter((e) => matches(e.id, f.id) && (!section || e.section === section)).length}</i>}
               </button>
             ))}
           </div>

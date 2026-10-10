@@ -12,6 +12,8 @@ export interface InkSurfaceHandle {
   redo: () => void
   resetZoom: () => void
   toggleEraserMode: () => void
+  /** Tömmer skrivytan (går att ångra). */
+  clear: () => void
 }
 
 interface Props {
@@ -45,6 +47,8 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
   const saveTimer = useRef<number>(0)
   const pending = useRef<{ strokes: Stroke[]; background: Background } | null>(null)
   const loadedFor = useRef<string | null>(null)
+  /** ”Gör om” bad om en tom skrivyta innan strecken hunnit laddas. */
+  const clearAfterLoad = useRef(false)
 
   const flush = () => {
     const p = pending.current
@@ -91,6 +95,10 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
       if (!alive || !engine.current) return
       const bg = d?.background ?? getSettings().background
       engine.current.load(d?.strokes ?? [], bg)
+      if (clearAfterLoad.current) {
+        clearAfterLoad.current = false
+        engine.current.clear()
+      }
       setBackground(bg)
       loadedFor.current = exerciseId
       setSaved(d ? 'saved' : 'idle')
@@ -115,6 +123,10 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
     undo: () => engine.current?.undo(),
     redo: () => engine.current?.redo(),
     resetZoom: () => engine.current?.resetView(),
+    clear: () => {
+      if (loadedFor.current === exerciseId) engine.current?.clear()
+      else clearAfterLoad.current = true
+    },
     toggleEraserMode: () => applyTools({ tool: 'eraser', eraserMode: tools.eraserMode === 'stroke' ? 'partial' : 'stroke' }),
   }))
 
