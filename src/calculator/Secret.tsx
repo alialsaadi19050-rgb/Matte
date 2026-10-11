@@ -5,8 +5,8 @@ import { createPortal } from 'react-dom'
 import { contentText } from '../vault/vault.ts'
 import './secret.css'
 
-/** Ordet som visar bilden (även med ett vanligt stavfel). */
-export const isSecretWord = (s: string) => /minox[io]dil/i.test(s.replace(/\s/g, ''))
+/** Ordet som visar bilden: ”hairloss” (även ”hair loss”). */
+export const isSecretWord = (s: string) => /hairloss/i.test(s.replace(/[\s-]/g, ''))
 
 export function SecretPopup({ onClose }: { onClose: () => void }) {
   const [src, setSrc] = useState<string | null>(null)
