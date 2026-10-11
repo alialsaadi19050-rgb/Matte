@@ -272,7 +272,9 @@ export function describeTask(c: AskContext): string {
   if (c.kind === 'lesson') return describeLesson(c.lesson)
   const { ex, part } = c
   const lines = [`Uppgift ${ex.number} (avsnitt ${ex.section}${ex.topic ? `, ${ex.topic}` : ''}, nivå ${ex.level.toUpperCase()}${ex.calculator === false ? ', utan räknare' : ''}).`, '', ex.prompt]
+  if (ex.figures?.length) lines.push(...ex.figures.map((f) => `Figur: ${f.alt}`))
   if (ex.parts.length > 1 || part.label) lines.push('', `Deluppgift ${part.label ?? ''}: ${part.prompt ?? ''}`)
+  if (part.figures?.length) lines.push(...part.figures.map((f) => `Figur till deluppgiften: ${f.alt}`))
   lines.push('', `Bokens facit: ${part.facit}`)
   if (part.solution) lines.push(`Bokens lösning: ${part.solution}`)
   if (part.hint) lines.push(`Bokens ledtråd: ${part.hint}`)

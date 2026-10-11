@@ -323,7 +323,7 @@ const STATUS_LABEL: Record<Status, string> = { new: 'Ny', attempted: 'Påbörjad
 export function Tile({ ex, progress }: { ex: Exercise; progress: Progress }) {
   const p = progress.byExercise[ex.id]
   const saved = !!useBookmarks()[ex.id]
-  const fig = ex.figures?.find((f) => f.kind !== 'table')
+  const fig = [...(ex.figures ?? []), ...ex.parts.flatMap((p) => p.figures ?? [])].find((f) => f.kind !== 'table')
   return (
     <a className={`mk-tile st-${p.status} ${saved ? 'saved' : ''}`} href={exerciseHref(ex.id)} onClick={markTransition} aria-label={`Uppgift ${ex.number}, nivå ${ex.level}, ${STATUS_LABEL[p.status]}${saved ? ', sparad till senare' : ''}`}>
       <div className="mk-tile-card">

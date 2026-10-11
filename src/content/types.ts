@@ -120,6 +120,8 @@ export interface Part {
   /** "a", "b" … eller null när uppgiften inte har deluppgifter. */
   label: string | null
   prompt?: string
+  /** Figur som hör till just den här deluppgiften (t.ex. ett Venndiagram i a). */
+  figures?: Figure[]
   answer: Answer
   /** Facitsvaret så som det står i boken (MathText). */
   facit: string

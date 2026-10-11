@@ -882,3 +882,19 @@ kbd {
   top: 0;
   right: 0;
 }
+
+/* ---------- Figur till en deluppgift ---------- */
+.ex-parts li.has-fig .figures {
+  margin: 6px 0 4px 1.4em;
+}
+.ex-parts li.has-fig .figure-venn,
+.ex-parts li.has-fig .figure-svg {
+  max-width: 220px;
+}
+.ex-field-fig .figures {
+  margin: 4px 0 8px;
+}
+.ex-field-fig .figure-venn,
+.ex-field-fig .figure-svg {
+  max-width: 150px;
+}

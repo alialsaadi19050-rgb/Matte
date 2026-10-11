@@ -50,6 +50,7 @@ export function validateExercise(ex: Exercise, opts: { figureExists?: (src: stri
       err(where, `okänd svarstyp ”${p.answer?.type}”`)
       return
     }
+    checkFigures(where, p.figures)
     checkFigures(where, p.facitFigures)
     for (const m of checkAnswer(p.answer)) err(where, m)
   })

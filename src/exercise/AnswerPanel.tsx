@@ -236,6 +236,11 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
         {part.label && <b>{part.label})</b>}
         <MathText text={part.prompt || (part.label ? '' : 'Svar')} />
       </div>
+      {part.figures?.length ? (
+        <div className="ex-field-fig">
+          <Figures figures={part.figures} />
+        </div>
+      ) : null}
 
       {kind.mode === 'self' ? (
         <div className="ex-self">

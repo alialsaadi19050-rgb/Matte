@@ -216,8 +216,9 @@ export function ExercisePage({ id }: { id: string }) {
                 <ol className="ex-parts">
                   {ex.parts.map((p, i) =>
                     p.label || p.prompt ? (
-                      <li key={p.label ?? i}>
+                      <li key={p.label ?? i} className={p.figures?.length ? 'has-fig' : ''}>
                         {p.label && <b>{p.label})</b>} <MathText text={p.prompt ?? ''} />
+                        {p.figures?.length ? <Figures figures={p.figures} /> : null}
                       </li>
                     ) : null,
                   )}

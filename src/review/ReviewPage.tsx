@@ -320,6 +320,7 @@ function PartView({ ex, part, editing, onChange }: { ex: Exercise; part: Part; e
       <div className="part-q">
         {part.label && <span className="part-label">{part.label})</span>}
         <MathText text={part.prompt ?? ''} />
+        <Figures figures={part.figures} />
       </div>
 
       <div className="facit">
