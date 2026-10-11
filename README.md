@@ -175,6 +175,7 @@ Försök, statistik, det du skrivit på skrivytan, sparade uppgifter och genomg�
 - Om två enheter ändrat samma sak vinner den senaste ändringen. Försök läggs alltid ihop, och klarade testfrågor slås ihop.
 - Loggar någon annan in i samma webbläsare rensas den förra personens lokala data först (den finns kvar på servern).
 - Status och **Synka nu** finns under **Inställningar → Data**.
+- **Radera mina data** (Inställningar → Data) raderar försök, skrivytor, bokmärken och genomgångar här och i synken. Dina andra enheter rensas vid nästa synk. Du bekräftar genom att skriva RADERA. Inställningar, färger och nycklar finns kvar. Backupfiler (.json) ligger på din dator och raderas som vanliga filer.
 - Gratisprojekt i Supabase pausas efter ungefär en vecka utan användning. Då startar du det igen på supabase.com. Appen fungerar lokalt under tiden.
 
 ### AI:n ser din uträkning

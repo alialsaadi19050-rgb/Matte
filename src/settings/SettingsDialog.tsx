@@ -486,6 +486,67 @@ function AiTab() {
   )
 }
 
+function DeleteSection({ onBackup }: { onBackup: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [typed, setTyped] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const ready = typed.trim().toUpperCase() === 'RADERA'
+
+  const run = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const { deleteAllData } = await import('../sync/sync.ts')
+      await deleteAllData()
+      location.reload()
+    } catch (e) {
+      setError(navigator.onLine ? (e as Error).message : 'Du är offline. Radering kräver internet, så att den också når synken.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="st-section st-danger">
+      <h3>Radera mina data</h3>
+      <p className="st-help">
+        Raderar alla dina försök, din statistik, allt du skrivit på skrivytan, sparade uppgifter och genomgångar – här och i synken. Dina andra enheter rensas nästa gång de synkar. Inställningar, färger och API-nycklar finns kvar. Det går inte att ångra.
+      </p>
+      {!open ? (
+        <button className="st-secondary danger" onClick={() => setOpen(true)}>
+          Radera mina data …
+        </button>
+      ) : (
+        <div className="st-coords">
+          <p className="st-help">
+            Vill du kunna återställa senare? <button className="st-link" onClick={onBackup}>Spara en backup först</button>.
+          </p>
+          <label className="st-confirm">
+            <span>
+              Skriv <b>RADERA</b> för att bekräfta
+            </span>
+            <input value={typed} onChange={(e) => setTyped(e.target.value)} onKeyDown={(e) => e.stopPropagation()} autoComplete="off" spellCheck={false} />
+          </label>
+          <div className="st-zone-presets">
+            <button className="danger" disabled={!ready || busy} onClick={run}>
+              {busy ? 'Raderar …' : 'Radera allt'}
+            </button>
+            <button
+              onClick={() => {
+                setOpen(false)
+                setTyped('')
+              }}
+            >
+              Avbryt
+            </button>
+          </div>
+          {error && <p className="st-note">{error}</p>}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function SyncSection() {
   const [mod, setMod] = useState<typeof import('../sync/sync.ts') | null>(null)
   useEffect(() => {
@@ -588,6 +649,7 @@ function DataTab() {
         {message && <p className={`st-note ${message.kind === 'ok' ? 'ok' : ''}`}>{message.text}</p>}
       </section>
       {!import.meta.env.DEV && <SyncSection />}
+      <DeleteSection onBackup={exportAll} />
       {!import.meta.env.DEV && (
         <section className="st-section">
           <h3>Logga ut</h3>

@@ -29,6 +29,8 @@ interface SyncState {
   /** Vems data som finns lokalt i den här webbläsaren. */
   owner?: string
   cursor: number
+  /** När datan senast raderades (från servern). Nyare radering → rensa lokalt. */
+  resetAt?: number
 }
 
 export type SyncStatus = { kind: 'off' } | { kind: 'syncing' } | { kind: 'ok'; at: number } | { kind: 'offline' } | { kind: 'error'; message: string }
@@ -166,9 +168,15 @@ async function runOnce(c: SyncCreds) {
   const state = readState()
 
   // 1. Hämta först, så att det som slås ihop lokalt också skickas tillbaka.
-  type Pull = { attempts: Attempt[]; docs: Doc[]; cursor: number }
+  type Pull = { attempts: Attempt[]; docs: Doc[]; cursor: number; resetAt?: number }
   // Lite marginal bakåt: att hämta något två gånger är ofarligt, att missa något är det inte.
   const pulled = await rpc<Pull>('sync_pull', { p_user: c.user, p_secret: c.secret, p_since: Math.max(0, state.cursor - 200) })
+  // Har datan raderats från en annan enhet sedan förra synken? Rensa här också, och ladda inte upp något.
+  if ((pulled.resetAt ?? 0) > (state.resetAt ?? 0)) {
+    await wipeLocal()
+    writeState({ owner: c.user, cursor: 0, resetAt: pulled.resetAt })
+    return setStatus({ kind: 'ok', at: Date.now() })
+  }
   await applyRemote(pulled.attempts, pulled.docs)
 
   // 2. Skicka det som ändrats här.
@@ -184,8 +192,38 @@ async function runOnce(c: SyncCreds) {
     clearDirty(dirty)
   }
 
-  writeState({ ...readState(), owner: c.user, cursor: Math.max(state.cursor, pulled.cursor) })
+  writeState({ ...readState(), owner: c.user, cursor: Math.max(state.cursor, pulled.cursor), resetAt: Math.max(state.resetAt ?? 0, pulled.resetAt ?? 0) })
   setStatus({ kind: 'ok', at: Date.now() })
+}
+
+/** Rensar framstegen i den här webbläsaren (inte inställningar, färger eller nycklar). */
+async function wipeLocal() {
+  await db.transaction('rw', db.attempts, db.drawings, async () => {
+    await db.attempts.clear()
+    await db.drawings.clear()
+  })
+  clearBookmarks()
+  clearLessonProgress()
+  replaceDirty({ attempts: [], docs: [] })
+  try {
+    sessionStorage.removeItem('matte.redo.session.v1')
+  } catch {
+    /* ingen lagring */
+  }
+}
+
+/**
+ * Raderar all din data: framsteg, skrivytor, bokmärken och genomgångar, här och på
+ * synkservern. Dina andra enheter rensas vid sin nästa synk.
+ */
+export async function deleteAllData(): Promise<void> {
+  if (creds) {
+    const t = await rpc<number>('sync_reset', { p_user: creds.user, p_secret: creds.secret })
+    await wipeLocal()
+    writeState({ owner: creds.user, cursor: 0, resetAt: t })
+  } else {
+    await wipeLocal()
+  }
 }
 
 /** Synkar nu (eller strax, om en synk redan pågår). */
