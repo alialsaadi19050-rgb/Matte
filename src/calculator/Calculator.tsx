@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { calculate, type Angle } from './calculate.ts'
 import { updateSettings, useSettings } from '../settings/settings.ts'
+import { isSecretWord, SecretPopup } from './Secret.tsx'
 import './calculator.css'
 
 interface Entry {
@@ -70,6 +71,8 @@ const TI_WIDTH = 340
 export function Calculator({ open, onClose, noCalculator }: { open: boolean; onClose: () => void; noCalculator?: boolean }) {
   const settings = useSettings()
   const [expr, setExpr] = useState('')
+  const [secret, setSecret] = useState(false)
+  const closeSecret = useCallback(() => setSecret(false), [])
   const [angle, setAngle] = useState<Angle>('deg')
   const [history, setHistory] = useState<Entry[]>([])
   const [error, setError] = useState('')
@@ -256,11 +259,17 @@ export function Calculator({ open, onClose, noCalculator }: { open: boolean; onC
         ))}
       </div>
 
+      {secret && <SecretPopup onClose={closeSecret} />}
       <div className={`calc-display ${error ? 'error' : ''}`}>
         <input
           ref={input}
           value={expr}
           onChange={(e) => {
+            if (isSecretWord(e.target.value)) {
+              setSecret(true)
+              setExpr('')
+              return
+            }
             setExpr(e.target.value)
             setError('')
           }}
