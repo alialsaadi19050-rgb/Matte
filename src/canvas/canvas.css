@@ -266,3 +266,10 @@
     margin: 2px 0;
   }
 }
+
+/* Visa allt */
+.ex-page-meta .ink-fit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}

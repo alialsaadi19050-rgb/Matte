@@ -3,7 +3,7 @@ import { InkCanvas, type InkStatus, type ToolState } from './InkCanvas.ts'
 import { HIGHLIGHT, INK, type Background, type HighlightColor, type InkColor, type Paper, type Stroke } from './types.ts'
 import { loadDrawing, saveDrawing } from '../storage/db.ts'
 import { getSettings, updateSettings, useSettings } from '../settings/settings.ts'
-import { ChevronLeft, Download, Eraser, Grid, Highlighter, Lasso, Pen, Redo, Undo } from '../design/icons.tsx'
+import { ChevronLeft, Download, Eraser, FitAll, Grid, Hand, Highlighter, Lasso, Pen, Redo, Undo } from '../design/icons.tsx'
 import './canvas.css'
 
 export interface InkSurfaceHandle {
@@ -14,6 +14,8 @@ export interface InkSurfaceHandle {
   toggleEraserMode: () => void
   /** Tömmer skrivytan (går att ångra). */
   clear: () => void
+  /** Zoomar så att allt du skrivit syns. */
+  fitContent: () => void
 }
 
 interface Props {
@@ -123,6 +125,7 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
     undo: () => engine.current?.undo(),
     redo: () => engine.current?.redo(),
     resetZoom: () => engine.current?.resetView(),
+    fitContent: () => engine.current?.fitContent(),
     clear: () => {
       if (loadedFor.current === exerciseId) engine.current?.clear()
       else clearAfterLoad.current = true
@@ -163,6 +166,7 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
                 ['highlighter', Highlighter, 'Överstrykning', settings.shortcuts.highlighter],
                 ['eraser', Eraser, 'Sudd – eller håll in pennans sidoknapp', settings.shortcuts.eraser],
                 ['lasso', Lasso, 'Markera och flytta', settings.shortcuts.lasso],
+                ['hand', Hand, 'Flytta runt på skrivytan – eller håll in mellanslag', settings.shortcuts.hand],
               ] as const
             ).map(([id, Icon, label, key]) => (
               <button key={id} className={active === id ? 'on' : ''} onClick={() => applyTools({ tool: id })} aria-label={label} title={`${label} (${key})`} aria-pressed={active === id}>
@@ -257,6 +261,9 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
 
       <div className="ex-page-meta" aria-live="polite">
         {status.selected > 0 && <span className="ink-chip">{status.selected} markerade · Delete tar bort</span>}
+        <button className="ink-fit" onClick={() => engine.current?.fitContent()} title="Visa allt du skrivit">
+          <FitAll size={14} /> Visa allt
+        </button>
         {Math.abs(status.zoom - 1) > 0.01 && (
           <button onClick={() => engine.current?.resetView()} title="Återställ zoom">
             {Math.round(status.zoom * 100)} %

@@ -1,7 +1,8 @@
 // Datamodellen för det du skriver. Allt lagras som vektorer i dokumentkoordinater
 // (1 enhet = 1 CSS-pixel vid 100 % zoom), så att det går att zooma och exportera skarpt.
 
-export type Tool = 'pen' | 'highlighter' | 'eraser' | 'lasso'
+/** 'hand' flyttar runt på skrivytan (dra med musen eller pennan). */
+export type Tool = 'pen' | 'highlighter' | 'eraser' | 'lasso' | 'hand'
 export type EraserMode = 'stroke' | 'partial'
 export type Background = 'grid' | 'lined' | 'blank'
 export type Paper = 'light' | 'dark'

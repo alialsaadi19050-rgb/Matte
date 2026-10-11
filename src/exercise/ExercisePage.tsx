@@ -84,6 +84,7 @@ export function ExercisePage({ id }: { id: string }) {
         case 'highlighter':
         case 'eraser':
         case 'lasso':
+        case 'hand':
           h?.setTool({ tool: action })
           break
         case 'eraserMode':

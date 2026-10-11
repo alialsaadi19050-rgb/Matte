@@ -46,21 +46,28 @@ export async function exportPng(o: ExportOptions): Promise<Blob> {
   return toBlob(renderArea(o, contentBox(o.strokes), 2, 56))
 }
 
-/** En PDF-sida per ”sida” i skrivytan (streckade linjer), i A4-format. */
+/**
+ * En PDF-sida per ”sida” i skrivytan (streckade linjer), i A4-format. Skrivytan är obegränsad,
+ * så har du skrivit utanför den vanliga sidan blir sidorna bredare (i samma proportioner) och
+ * börjar där ditt översta streck finns.
+ */
 export async function exportPdf(o: ExportOptions): Promise<Blob> {
   const box = contentBox(o.strokes)
-  const pages = Math.max(1, Math.ceil(box.maxY / PAGE_H))
+  const width = box.maxX - box.minX
+  const pageH = (width * PAGE_H) / PAGE_W
+  const startY = Math.floor(box.minY / pageH) * pageH
+  const pages = Math.max(1, Math.ceil((box.maxY - startY) / pageH))
   const pdf = await PDFDocument.create()
   pdf.setTitle(o.title)
   const font = await pdf.embedFont(StandardFonts.HelveticaBold)
   const A4: [number, number] = [595.28, 841.89]
   for (let i = 0; i < pages; i++) {
-    const area: Box = { minX: 0, minY: i * PAGE_H, maxX: PAGE_W, maxY: (i + 1) * PAGE_H }
+    const area: Box = { minX: box.minX, minY: startY + i * pageH, maxX: box.maxX, maxY: startY + (i + 1) * pageH }
     const pageStrokes = o.strokes.filter((s) => {
       const b = strokeBox(s)
       return b.maxY >= area.minY && b.minY <= area.maxY
     })
-    const png = await pdf.embedPng(await (await toBlob(renderArea({ ...o, strokes: pageStrokes }, area, 2, 0))).arrayBuffer())
+    const png = await pdf.embedPng(await (await toBlob(renderArea({ ...o, strokes: pageStrokes }, area, Math.min(2, (2 * PAGE_W) / width), 0))).arrayBuffer())
     const page = pdf.addPage(A4)
     const margin = 28
     const top = 36

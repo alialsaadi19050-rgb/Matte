@@ -10,6 +10,9 @@ import { cachedPath, drawBackground, drawStroke, strokeColor, strokePath, type V
 import type { Background, Box, EraserMode, HighlightColor, InkColor, Paper, Point, Stroke, Tool } from './types.ts'
 import { ERASER_SIZES, HIGHLIGHTER_SIZES, PEN_SIZES } from './types.ts'
 
+/** Hur långt du kan zooma ut på den obegränsade skrivytan. */
+const MIN_ZOOM = 0.2
+
 export interface ToolState {
   tool: Tool
   color: InkColor
@@ -195,16 +198,32 @@ export class InkCanvas {
     return [(clientX - r.left) / this.view.zoom + this.view.x, (clientY - r.top) / this.view.zoom + this.view.y]
   }
 
+  /** Skrivytan är obegränsad åt alla håll; bara zoomen har gränser. */
   private clampView() {
     const v = this.view
-    v.zoom = Math.min(4, Math.max(0.35, v.zoom))
-    v.y = Math.max(-80, v.y)
-    v.x = Math.min(2400, Math.max(-600, v.x))
+    v.zoom = Math.min(4, Math.max(MIN_ZOOM, v.zoom))
+  }
+
+  /** Zoomar och flyttar så att allt du skrivit syns (eller tillbaka till start om ytan är tom). */
+  fitContent() {
+    // Mät om först, så att zoomen räknas på skrivytans faktiska storlek.
+    this.resize()
+    if (this.width < 40 || this.height < 40) return
+    const b = unionBox(this.strokes.map(strokeBox))
+    if (!b) return this.resetView()
+    const pad = 40
+    const w = b.maxX - b.minX + 2 * pad
+    const h = b.maxY - b.minY + 2 * pad
+    const zoom = Math.min(1.5, Math.max(MIN_ZOOM, Math.min(this.width / w, this.height / h)))
+    this.view = { zoom, x: b.minX - pad - (this.width / zoom - w) / 2, y: b.minY - pad - (this.height / zoom - h) / 2 }
+    this.invalidate()
+    this.updateCursor()
+    this.emitStatus()
   }
 
   private zoomAt(zoom: number, sx: number, sy: number) {
     const before = this.view
-    const z = Math.min(4, Math.max(0.35, zoom))
+    const z = Math.min(4, Math.max(MIN_ZOOM, zoom))
     const docX = sx / before.zoom + before.x
     const docY = sy / before.zoom + before.y
     this.view = { zoom: z, x: docX - sx / z, y: docY - sy / z }
@@ -350,9 +369,10 @@ export class InkCanvas {
   private updateCursor() {
     const h = this.hover
     const c = this.cursor
-    if (!h || h.type === 'touch' || this.spaceHeld || this.action?.kind === 'pan') {
+    const hand = this.tools.tool === 'hand' && !this.barrel
+    if (!h || h.type === 'touch' || this.spaceHeld || hand || this.action?.kind === 'pan') {
       c.style.opacity = '0'
-      this.el.style.cursor = this.spaceHeld ? 'grab' : ''
+      this.el.style.cursor = this.action?.kind === 'pan' ? 'grabbing' : this.spaceHeld || hand ? 'grab' : ''
       return
     }
     this.el.style.cursor = 'none'
@@ -449,7 +469,8 @@ export class InkCanvas {
     this.capture(e.pointerId)
     this.hover = { x: e.offsetX, y: e.offsetY, type: e.pointerType }
 
-    if (this.spaceHeld || e.button === 1) {
+    // Flytta: mellanslag, mittenknappen eller flytta-verktyget (handen).
+    if (this.spaceHeld || e.button === 1 || (this.tools.tool === 'hand' && e.button === 0 && !(e.buttons & 32))) {
       this.action = { kind: 'pan', pointerId: e.pointerId, startClient: [e.clientX, e.clientY], startView: { ...this.view } }
       this.el.style.cursor = 'grabbing'
       this.updateCursor()
@@ -686,7 +707,7 @@ export class InkCanvas {
       const [a, b] = pts
       const dist = Math.hypot(a[0] - b[0], a[1] - b[1])
       const mid: [number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
-      const zoom = Math.min(4, Math.max(0.35, (g.view.zoom * dist) / g.dist))
+      const zoom = Math.min(4, Math.max(MIN_ZOOM, (g.view.zoom * dist) / g.dist))
       const docX = (g.mid[0] - r.left) / g.view.zoom + g.view.x
       const docY = (g.mid[1] - r.top) / g.view.zoom + g.view.y
       this.view = { zoom, x: docX - (mid[0] - r.left) / zoom, y: docY - (mid[1] - r.top) / zoom }

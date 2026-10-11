@@ -21,12 +21,14 @@ export type ActionId =
   | 'prev'
   | 'calculator'
   | 'bookmark'
+  | 'hand'
 
 export const ACTIONS: { id: ActionId; label: string }[] = [
   { id: 'pen', label: 'Penna' },
   { id: 'highlighter', label: 'Överstrykningspenna' },
   { id: 'eraser', label: 'Sudd' },
   { id: 'lasso', label: 'Markera och flytta' },
+  { id: 'hand', label: 'Flytta runt på skrivytan (hand)' },
   { id: 'eraserMode', label: 'Växla hela streck / delsudd' },
   { id: 'undo', label: 'Ångra' },
   { id: 'redo', label: 'Gör om' },
@@ -60,6 +62,7 @@ export const DEFAULT_SHORTCUTS: Record<ActionId, string> = {
   prev: 'Shift+N',
   calculator: 'R',
   bookmark: 'B',
+  hand: 'M',
 }
 
 /** Gaomon S620: aktiv yta 165 × 101 mm. */

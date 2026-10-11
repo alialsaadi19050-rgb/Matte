@@ -86,7 +86,7 @@ Appen läggs ut på GitHub Pages automatiskt vid varje push till `main` (`.githu
 
 ## Skrivytan
 
-Allt du skriver sparas automatiskt per uppgift i webbläsarens IndexedDB och finns kvar när du kommer tillbaka. Verktyg: penna (fyra färger, tre tjocklekar), överstrykning, sudd (hela streck eller delsudd), lasso för att markera och flytta, ångra och gör om. Bakgrunden kan vara rutad, linjerad eller blank. Skrivytan växer nedåt så långt du behöver, och streckade linjer visar var en ny A4-sida börjar vid export. Spara lösningen som **PDF** (en A4-sida per sida) eller **PNG** via nedladdningsknappen i verktygsfältet.
+Allt du skriver sparas automatiskt per uppgift i webbläsarens IndexedDB och finns kvar när du kommer tillbaka. Verktyg: penna (fyra färger, tre tjocklekar), överstrykning, sudd (hela streck eller delsudd), lasso för att markera och flytta, ångra och gör om. Bakgrunden kan vara rutad, linjerad eller blank. Skrivytan är **obegränsad åt alla håll**. Flytta runt med **handen** ✋ i verktygsfältet (`M`), med mellanslag + dra, med mittenknappen eller med scrollhjulet. **Visa allt** nere till höger zoomar så att allt du skrivit syns. Streckade linjer visar var en ny A4-sida börjar vid export, och PDF:en tar med allt du skrivit (bredare sidor om det behövs). Spara lösningen som **PDF** (en A4-sida per sida) eller **PNG** via nedladdningsknappen i verktygsfältet.
 
 ## Granska avskriften (fas 1)
 
@@ -275,6 +275,7 @@ Alla kortkommandon kan ändras under **Inställningar → Kortkommandon**:
 | Tangent | Funktion |
 |---|---|
 | `P` / `H` / `E` / `L` | Penna / överstrykning / sudd / markera och flytta |
+| `M` | Flytta runt på skrivytan (handen) |
 | `Shift+E` | Växla mellan att sudda hela streck och delsudd |
 | `1`–`4` | Pennfärg |
 | `Ctrl+Z` / `Ctrl+Y` | Ångra / gör om |

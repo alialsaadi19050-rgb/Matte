@@ -163,3 +163,14 @@ export const Shrink = (p: P) => (
     <path d="M20 10h-6V4M4 14h6v6M14 10l6.5-6.5M10 14l-6.5 6.5" />
   </svg>
 )
+export const Hand = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5V4a1.5 1.5 0 0 1 3 0v7.5M14 11.5V5.5a1.5 1.5 0 0 1 3 0V13M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.6a6 6 0 0 1-4.5-2l-3.6-4.2a1.6 1.6 0 0 1 2.3-2.2L8 14" />
+  </svg>
+)
+export const FitAll = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" />
+    <rect x="8.5" y="8.5" width="7" height="7" rx="1" />
+  </svg>
+)
