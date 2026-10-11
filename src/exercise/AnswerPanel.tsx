@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { Answer, Exercise, Part } from '../content/types.ts'
 import { checkAnswer, type CheckStatus } from '../check/check.ts'
 import { MathInput, type MathInputHandle } from '../check/MathInput.tsx'
+import { emptyVenn, VennInput, vennExpr, type VennValue } from '../check/VennInput.tsx'
+import { exprToRegions } from '../check/vennInput.ts'
 import { attemptsFor, currentRound, recordAttempt, type Attempt } from '../storage/db.ts'
 import { MathText } from '../ui/MathText.tsx'
 import { Figures } from '../ui/Figure.tsx'
@@ -174,6 +176,14 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
   const boxRefs = useRef<(MathInputHandle | null)[]>([])
   const solvedParts = solvedInput?.split(';').map((x) => x.trim()) ?? []
   const hasVariables = (answer.type === 'expression' || answer.type === 'list') && !!answer.variables?.length
+  // Mängduttryck med högst tre mängder kan också besvaras genom att skugga i ett Venndiagram.
+  const vennable = answer.type === 'set-expression' && answer.sets.length <= 3
+  const [drawMode, setDrawMode] = useState(answer.type === 'set-expression' && !!answer.draw && answer.sets.length <= 3)
+  const [venn, setVenn] = useState<VennValue>(() => {
+    if (answer.type !== 'set-expression') return emptyVenn([])
+    const start = emptyVenn(answer.sets)
+    return solvedInput ? { ...start, shaded: exprToRegions(solvedInput, start.labels) } : start
+  })
   const ordinal = (i: number) => `${i + 1}:${i === 0 || i === 1 ? 'a' : 'e'}`
 
   const save = (status: 'correct' | 'partial' | 'incorrect', input: string, self = false) => {
@@ -191,7 +201,7 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
 
   const submit = (raw?: string) => {
     if (correct) return
-    let input = raw ?? field.current?.plain() ?? ''
+    let input = raw ?? (drawMode ? vennExpr(venn) : field.current?.plain()) ?? ''
     if (raw === undefined && boxes) {
       const parts = Array.from({ length: boxes }, (_, i) => boxRefs.current[i]?.plain().trim() ?? '')
       if (parts.some((p) => !p)) {
@@ -278,6 +288,34 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
           )}
         </div>
       ) : (
+        <>
+        {vennable && !correct && (
+          <div className="ex-mode" role="radiogroup" aria-label="Svara genom att">
+            <button role="radio" aria-checked={!drawMode} className={!drawMode ? 'on' : ''} onClick={() => setDrawMode(false)}>
+              Skriv
+            </button>
+            <button role="radio" aria-checked={drawMode} className={drawMode ? 'on' : ''} onClick={() => setDrawMode(true)}>
+              Rita Venndiagram
+            </button>
+          </div>
+        )}
+        {drawMode && answer.type === 'set-expression' ? (
+          <div className="ex-venn-row">
+            <VennInput value={venn} onChange={(v) => {
+              setVenn(v)
+              if (feedback?.status === 'invalid') setFeedback(null)
+            }} sets={answer.sets} universe={answer.universe} constraints={answer.constraints} readOnly={correct} />
+            {correct ? (
+              <span className="ex-ok">
+                <Check size={16} strokeWidth={3} />
+              </span>
+            ) : (
+              <button className="ex-check" onClick={() => submit()}>
+                Kontrollera
+              </button>
+            )}
+          </div>
+        ) : (
         <div className={`ex-input-row ${boxes ? 'multi' : ''}`}>
           {boxes ? (
             <div className="ex-boxes">
@@ -333,6 +371,8 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
             </button>
           )}
         </div>
+        )}
+        </>
       )}
 
       {hasVariables && textMode === 'math' && !correct && <p className="ex-exp-tip">Tips: tryck → (högerpil) för att komma ut ur en exponent.</p>}

@@ -75,6 +75,8 @@ export interface SetExpressionAnswer {
   universe?: string
   /** Villkor som gäller i uppgiften, t.ex. "B ⊆ A", "R = ∅", "A ∩ D = ∅". */
   constraints?: string[]
+  /** Svara helst genom att skugga i ett Venndiagram (t.ex. ”Rita av och skugga …”). */
+  draw?: boolean
 }
 
 export interface ChoiceAnswer {

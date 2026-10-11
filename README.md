@@ -194,6 +194,16 @@ Under **Lär dig** (`#/lar`) finns en genomgång per delområde, byggd på boken
 
 Genomgångarna ligger i `public/content/data/lessons.json` och figurerna i `public/content/figures/lektion-*.svg`. De krypteras med resten av boken av `npm run lock`.
 
+## Svara med Venndiagram
+
+Uppgifter där svaret är ett mängduttryck (högst tre mängder) har valet **Skriv** eller **Rita Venndiagram**:
+
+1. Välj **1, 2 eller 3 cirklar** och skriv en bokstav i varje (förifyllt med uppgiftens mängder).
+2. **Klicka på områdena** som ska skuggas, även området utanför cirklarna. Klicka igen för att ta bort.
+3. **Kontrollera**: skuggningen blir ett mängduttryck och rättas område för område, med samma tips som annars.
+
+Med två cirklar följer bilden uppgiftens villkor: ”B ⊆ A” ritar B inuti A, och ”A ∩ B = ∅” ritar dem isär. I 1226 och 1227 (”Rita av Venndiagrammet och skugga …”) är ritläget förvalt och rättas automatiskt.
+
 ## Gör om det du fått fel på
 
 - Raden **Gör om** på startsidan visar alla uppgifter du fått fel på någon gång, mest missade först. Brickan visar hur många fel.
