@@ -8,7 +8,9 @@ import { db, type Attempt } from '../storage/db.ts'
 import type { Drawing } from '../canvas/types.ts'
 import { applyRemoteBookmark, bookmarkDoc, bookmarkIds, clearBookmarks } from '../bookmarks/bookmarks.ts'
 import { applyRemoteLesson, clearLessonProgress, lessonDoc, lessonIds, type LessonProgress } from '../lessons/progress.ts'
-import { clearDirty, readDirty, replaceDirty, setChangeListener, type Dirty } from './changes.ts'
+import { clearDirty, markDirty, readDirty, replaceDirty, setChangeListener, type Dirty } from './changes.ts'
+import { AI_DOC, aiSnapshot, applyRemoteAi, clearAiLocal } from '../ai/ai.ts'
+import { seal, unseal, type Sealed } from '../vault/crypto.ts'
 
 // Projektets publika adress och publiceringsnyckel. De är gjorda för att ligga i webbläsaren:
 // tabellerna går inte att läsa direkt, bara via funktionerna som kräver hemligheten.
@@ -23,6 +25,8 @@ export interface SyncCreds {
   /** Inloggningens id (hash av användarnamnet). */
   user: string
   secret: string
+  /** Krypterar API-nycklarna innan de synkas. Lämnar aldrig enheten. */
+  keys?: CryptoKey
 }
 
 interface SyncState {
@@ -87,7 +91,12 @@ async function rpc<T>(fn: string, body: Record<string, unknown>): Promise<T> {
 
 type Doc = { key: string; data: unknown; updatedAt: number; deleted?: boolean }
 
-async function docFor(key: string): Promise<Doc | null> {
+async function docFor(key: string, c: SyncCreds): Promise<Doc | null> {
+  if (key === AI_DOC) {
+    const snap = aiSnapshot()
+    if (!snap || !c.keys) return null
+    return { key, data: await seal(c.keys, snap.value), updatedAt: snap.updatedAt }
+  }
   const [kind, ...rest] = key.split(':')
   const id = rest.join(':')
   if (kind === 'drawing') {
@@ -109,12 +118,12 @@ async function docFor(key: string): Promise<Doc | null> {
 async function everything(): Promise<Dirty> {
   const attempts = (await db.attempts.toArray()).flatMap((a) => (a.uid ? [a.uid] : []))
   const drawings = (await db.drawings.toCollection().primaryKeys()).map((id) => `drawing:${id}`)
-  return { attempts, docs: [...drawings, ...bookmarkIds().map((id) => `bookmark:${id}`), ...lessonIds().map((id) => `lesson:${id}`)] }
+  return { attempts, docs: [...drawings, ...bookmarkIds().map((id) => `bookmark:${id}`), ...lessonIds().map((id) => `lesson:${id}`), ...(aiSnapshot() ? [AI_DOC] : [])] }
 }
 
 /* ---------- Ändringar från andra enheter ---------- */
 
-async function applyRemote(attempts: Attempt[], docs: Doc[]) {
+async function applyRemote(attempts: Attempt[], docs: Doc[], c: SyncCreds) {
   if (attempts.length) {
     const uids = attempts.map((a) => a.uid!).filter(Boolean)
     const have = new Set((await db.attempts.where('uid').anyOf(uids).toArray()).map((a) => a.uid))
@@ -122,6 +131,17 @@ async function applyRemote(attempts: Attempt[], docs: Doc[]) {
     if (fresh.length) await db.attempts.bulkAdd(fresh)
   }
   for (const d of docs) {
+    if (d.key === AI_DOC) {
+      if (c.keys && d.data && !d.deleted) {
+        try {
+          const value = await unseal<Parameters<typeof applyRemoteAi>[0]>(c.keys, d.data as Sealed)
+          applyRemoteAi(value, d.updatedAt)
+        } catch {
+          // Krypterad med ett annat lösenord: hoppa över, den här enhetens nycklar skickas i stället.
+        }
+      }
+      continue
+    }
     const [kind, ...rest] = d.key.split(':')
     const id = rest.join(':')
     if (kind === 'drawing' && !d.deleted && d.data) {
@@ -177,13 +197,13 @@ async function runOnce(c: SyncCreds) {
     writeState({ owner: c.user, cursor: 0, resetAt: pulled.resetAt })
     return setStatus({ kind: 'ok', at: Date.now() })
   }
-  await applyRemote(pulled.attempts, pulled.docs)
+  await applyRemote(pulled.attempts, pulled.docs, c)
 
   // 2. Skicka det som ändrats här.
   const dirty = readDirty()
   if (dirty.attempts.length || dirty.docs.length) {
     const attempts = (await db.attempts.where('uid').anyOf(dirty.attempts).toArray()).map(({ id: _id, ...a }) => a)
-    const docs = (await Promise.all(dirty.docs.map(docFor))).filter((d): d is Doc => !!d)
+    const docs = (await Promise.all(dirty.docs.map((k) => docFor(k, c)))).filter((d): d is Doc => !!d)
     for (let i = 0; i < Math.max(1, attempts.length); i += 500) {
       const part = attempts.slice(i, i + 500)
       if (part.length) await rpc('sync_push', { p_user: c.user, p_secret: c.secret, p_attempts: part, p_docs: [] })
@@ -221,6 +241,8 @@ export async function deleteAllData(): Promise<void> {
     const t = await rpc<number>('sync_reset', { p_user: creds.user, p_secret: creds.secret })
     await wipeLocal()
     writeState({ owner: creds.user, cursor: 0, resetAt: t })
+    // API-nycklarna finns kvar och ska fortsätta följa med till dina andra enheter.
+    if (aiSnapshot()) markDirty('doc', AI_DOC)
   } else {
     await wipeLocal()
   }
@@ -269,6 +291,8 @@ export async function startSync(c: SyncCreds) {
     })
     clearBookmarks()
     clearLessonProgress()
+    // Den förra personens API-nycklar ska inte följa med till ditt konto.
+    clearAiLocal()
     replaceDirty({ attempts: [], docs: [] })
     writeState({ owner: c.user, cursor: 0 })
   } else if (!state.owner || localStorage.getItem(FULL_UPLOAD_KEY)) {

@@ -42,3 +42,16 @@ describe('vault', () => {
     expect(text.toLowerCase()).not.toContain('kompis')
   })
 })
+
+describe('krypterade API-nycklar', () => {
+  it('går bara att öppna med samma inloggning', async () => {
+    const { secretsKey, seal, unseal, syncSecret } = await import('./crypto.ts')
+    const k = await secretsKey('Elev', 'hemligt123')
+    const sealed = await seal(k, { keys: { deepseek: 'sk-test' } })
+    expect(JSON.stringify(sealed)).not.toContain('sk-test')
+    expect(await unseal(await secretsKey('elev', 'hemligt123'), sealed)).toEqual({ keys: { deepseek: 'sk-test' } })
+    await expect(unseal(await secretsKey('elev', 'annat456'), sealed)).rejects.toThrow()
+    // Synkhemligheten (som skickas till servern) är något helt annat.
+    expect(await syncSecret('elev', 'hemligt123')).not.toContain(sealed.ct.slice(0, 8))
+  })
+})

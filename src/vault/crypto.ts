@@ -155,3 +155,28 @@ export async function syncSecret(user: string, password: string): Promise<string
   const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode('matte-sync-v1'), iterations: 200_000 }, base, 256)
   return Array.from(new Uint8Array(bits), (b) => b.toString(16).padStart(2, '0')).join('')
 }
+
+/* ---------- Hemligheter som synkas krypterade (API-nycklar) ---------- */
+
+/**
+ * Nyckel för att kryptera dina API-nycklar innan de synkas. Härleds ur användarnamn och
+ * lösenord med ett eget salt och lämnar aldrig enheten, så synkservern kan inte läsa dem.
+ */
+export const secretsKey = (user: string, password: string) => deriveKey(user, password, enc.encode('matte-keys-v1'))
+
+export interface Sealed {
+  iv: string
+  ct: string
+}
+
+export async function seal(key: CryptoKey, value: unknown): Promise<Sealed> {
+  const iv = random(12)
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(value))))
+  return { iv: b64(iv), ct: b64(ct) }
+}
+
+/** Kastar om nyckeln inte passar (t.ex. efter byte av lösenord). */
+export async function unseal<T>(key: CryptoKey, s: Sealed): Promise<T> {
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(s.iv) as BufferSource }, key, unb64(s.ct) as BufferSource)
+  return JSON.parse(dec.decode(plain)) as T
+}

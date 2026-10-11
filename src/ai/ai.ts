@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from 'react'
 import type Anthropic from '@anthropic-ai/sdk'
 import type { Exercise, Lesson, Part } from '../content/types.ts'
+import { markDirty } from '../sync/changes.ts'
 
 export type Provider = 'claude' | 'deepseek'
 
@@ -47,15 +48,54 @@ let state = load()
 const listeners = new Set<() => void>()
 const emit = () => listeners.forEach((l) => l())
 
+/** När nycklarna eller valet av AI senast ändrades här, för synken. */
+const UPDATED_KEY = 'matte.ai.updated'
+
+function changed() {
+  write(UPDATED_KEY, String(Date.now()))
+  emit()
+  // Nycklarna följer med inloggningen till dina andra enheter, krypterade.
+  markDirty('doc', AI_DOC)
+}
+
 export function setApiKey(provider: Provider, key: string) {
   state = { ...state, keys: { ...state.keys, [provider]: key.trim() } }
   write(KEYS[provider], key.trim())
-  emit()
+  changed()
 }
 
 export function setProvider(provider: Provider) {
   state = { ...state, provider }
   write(PROVIDER_KEY, provider)
+  changed()
+}
+
+/* ---------- Synk (krypterat) ---------- */
+
+export const AI_DOC = 'secret:ai'
+
+/** Nycklarna och valet av AI, eller null om inget har ställts in här. */
+export function aiSnapshot(): { value: AiState; updatedAt: number } | null {
+  const updatedAt = Number(read(UPDATED_KEY)) || 0
+  if (!updatedAt && !state.keys.claude && !state.keys.deepseek) return null
+  return { value: state, updatedAt: updatedAt || 1 }
+}
+
+/** Nycklar från en annan enhet. Den senaste ändringen vinner. */
+export function applyRemoteAi(value: AiState, updatedAt: number) {
+  if (updatedAt <= (Number(read(UPDATED_KEY)) || 0)) return
+  state = { provider: value.provider === 'deepseek' ? 'deepseek' : 'claude', keys: { claude: value.keys?.claude ?? '', deepseek: value.keys?.deepseek ?? '' } }
+  write(KEYS.claude, state.keys.claude)
+  write(KEYS.deepseek, state.keys.deepseek)
+  write(PROVIDER_KEY, state.provider)
+  write(UPDATED_KEY, String(updatedAt))
+  emit()
+}
+
+/** Tar bort nycklarna från den här webbläsaren (vid utloggning eller byte av konto). De finns kvar i synken. */
+export function clearAiLocal() {
+  state = { provider: 'claude', keys: { claude: '', deepseek: '' } }
+  for (const k of [KEYS.claude, KEYS.deepseek, PROVIDER_KEY, UPDATED_KEY]) write(k, '')
   emit()
 }
 

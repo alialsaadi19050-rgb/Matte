@@ -4,7 +4,7 @@
 //
 // I utvecklingsläget (npm run dev) läses de okrypterade filerna i public/content direkt.
 import { useSyncExternalStore } from 'react'
-import { login as unlockVault, openVault, parseVault, syncSecret, type Unlock } from './crypto.ts'
+import { login as unlockVault, openVault, parseVault, secretsKey, syncSecret, type Unlock } from './crypto.ts'
 import type { SyncCreds } from '../sync/sync.ts'
 
 /** Det som sparas efter inloggning: nyckeln till boken och synkens hemlighet (inget lösenord). */
@@ -90,8 +90,8 @@ export async function restoreSession(): Promise<void> {
   if (PLAIN) return
   try {
     const saved = await loadKey()
-    // Inloggningar från innan synken fanns saknar synkens hemlighet: logga in en gång till.
-    if (saved?.sync) {
+    // Inloggningar från innan synken (eller synken av API-nycklar) fanns: logga in en gång till.
+    if (saved?.sync?.keys) {
       files = (await openVault(await parseOrReload(await fetchVault()), saved)).files
       set('open')
       sync().then((s) => s.startSync(saved.sync!))
@@ -116,7 +116,8 @@ export async function login(user: string, password: string): Promise<void> {
   try {
     const res = await unlockVault(vault, user, password)
     files = res.files.files
-    saved = { ...res.unlock, sync: { user: res.unlock.slot, secret: await syncSecret(user, password) } }
+    const [secret, keys] = await Promise.all([syncSecret(user, password), secretsKey(user, password)])
+    saved = { ...res.unlock, sync: { user: res.unlock.slot, secret, keys } }
   } catch {
     throw new Error('Fel användarnamn eller lösenord.')
   }
@@ -134,6 +135,9 @@ export async function logout(): Promise<void> {
   const s = await sync()
   await Promise.race([s.syncNow(), new Promise((r) => setTimeout(r, 4000))])
   s.stopSync()
+  // API-nycklarna följer inloggningen, så de ska inte ligga kvar i webbläsaren efter utloggning.
+  const { clearAiLocal } = await import('../ai/ai.ts')
+  clearAiLocal()
   files = null
   await forgetKey().catch(() => {})
   set('locked')

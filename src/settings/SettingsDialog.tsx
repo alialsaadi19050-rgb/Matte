@@ -479,7 +479,7 @@ function AiTab() {
         )}
         {state.text && <p className={`st-note ${state.kind === 'ok' ? 'ok' : ''}`}>{state.text}</p>}
         <p className="st-help">
-          Nyckeln sparas bara i den här webbläsaren och skickas bara till {provider === 'claude' ? 'Anthropic' : 'DeepSeek'}. Den följer inte med i backupen. Dela inte appen med andra medan nyckeln ligger kvar.
+          Nyckeln följer med din inloggning till dina andra enheter. Den krypteras på enheten med en nyckel från ditt lösenord innan den synkas, så synkservern kan inte läsa den. Den används bara för att fråga {provider === 'claude' ? 'Anthropic' : 'DeepSeek'}, och den tas bort från webbläsaren när du loggar ut.
         </p>
       </section>
     </>

@@ -161,14 +161,14 @@ Välj AI och klistra in din egen nyckel under **Inställningar → AI**. Appen t
 | Nyckel | [console.anthropic.com](https://console.anthropic.com/settings/keys) | [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
 | Kostnad per fråga | några ören till någon krona | oftast under ett öre |
 
-- Nycklarna sparas bara i den här webbläsaren (`localStorage`) och skickas bara till respektive företag. De följer inte med i backupen.
+- Nycklarna följer med din inloggning till dina andra enheter. De **krypteras på enheten** (AES-GCM, med en nyckel som härleds ur ditt lösenord och aldrig lämnar enheten) innan de synkas, så synkservern kan inte läsa dem. De tas bort från webbläsaren när du loggar ut, och när någon annan loggar in i samma webbläsare. De följer inte med i backupen.
 - Med Claude svarar en reservmodell automatiskt om Opus 5.5 är överbelastad (server-side fallback).
 - DeepSeek behandlar frågorna på servrar i Kina.
 - Det kräver internet. Resten av appen fungerar offline som vanligt.
 
 ## Synk mellan enheter
 
-Försök, statistik, det du skrivit på skrivytan, sparade uppgifter och genomgångar synkas automatiskt mellan alla enheter där du är inloggad (Supabase-projektet **matte** i Stockholm). Inställningar, färger, API-nycklar och TI-84-ROM stannar på varje enhet.
+Försök, statistik, det du skrivit på skrivytan, sparade uppgifter, genomgångar och dina API-nycklar (krypterade) synkas automatiskt mellan alla enheter där du är inloggad (Supabase-projektet **matte** i Stockholm). Inställningar, färger och TI-84-ROM stannar på varje enhet.
 
 - Allt sparas först lokalt, så appen fungerar utan nät. Synken körs vid inloggning, strax efter varje ändring, var 45:e sekund och när nätet kommer tillbaka.
 - Lösenordet lämnar aldrig enheten. Servern får en hemlighet som räknas fram ur det (med ett annat salt än boknyckeln), och varje konto når bara sin egen data. Tabellerna går inte att läsa direkt, bara via funktionerna `sync_pull` och `sync_push`.
