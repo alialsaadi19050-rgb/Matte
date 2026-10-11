@@ -812,3 +812,38 @@ kbd {
   font-size: 12.5px;
   font-weight: 750;
 }
+
+/* ---------- En ruta per del (listor) ---------- */
+.ex-input-row.multi {
+  flex-direction: column;
+  align-items: stretch;
+}
+.ex-boxes {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.ex-box {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.ex-box > span {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.ex-boxes .ex-ok {
+  position: absolute;
+  top: -4px;
+  right: 0;
+}
+.ex-input-row.multi .ex-check {
+  align-self: flex-end;
+}
+.ex-exp-tip {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}

@@ -315,3 +315,15 @@ describe('hela boken: facit godkänns', () => {
     }
   }
 })
+
+describe('exponenter som fastnat i mattefältet', () => {
+  it('läser x^(4y) som x⁴·y när facit har vanliga exponenter', () => {
+    const a = { type: 'list' as const, items: ['x^5', '15x^4*y', '90x^3*y^2'], ordered: true, variables: ['x', 'y'] }
+    expect(checkAnswer(a, 'x^5; 15x^(4y); 90x^(3y^2)').status).toBe('correct')
+    expect(checkAnswer({ type: 'expression', value: '6x^5*y', variables: ['x', 'y'] }, '6x^(5y)').status).toBe('correct')
+  })
+  it('rör inte riktiga variabelexponenter', () => {
+    expect(checkAnswer({ type: 'expression', value: '2^(2n)', variables: ['n'] }, '2^(2n)').status).toBe('correct')
+    expect(checkAnswer({ type: 'expression', value: '2^(2n)', variables: ['n'] }, '2^2*n').status).not.toBe('correct')
+  })
+})

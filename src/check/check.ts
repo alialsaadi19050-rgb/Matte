@@ -250,8 +250,24 @@ export function isFactored(node: MathNode): boolean {
   return false
 }
 
-function parseExpr(raw: string, variables: string[]): MathNode | { error: string } {
+/**
+ * I mattefältet hamnar det man skriver efter en exponent lätt i exponenten: 15x⁴y blir
+ * x^(4y). Ett tal följt av variabler i exponenten (x^(4y), x^(3y^2)) är nästan alltid det
+ * misstaget, så det läses som x^4·y.
+ */
+export function liftStuckExponents(s: string, variables: string[]): string {
+  if (!variables.length) return s
+  const v = variables.map((x) => x.replace(/[^a-zA-Z]/g, '')).join('')
+  const stuck = new RegExp(String.raw`\^\((\d+)\s*\*?\s*((?:[${v}](?:\^\d+)?\s*\*?\s*)+)\)`, 'g')
+  return s.replace(stuck, (_m, exp: string, rest: string) => `^${exp}*${rest.trim().replace(/\*$/, '')}`)
+}
+
+/** Facit har en variabel i någon exponent, t.ex. 2^n – då ska inget läsas om. */
+const hasVarExponent = (t: string) => [...t.matchAll(/\^\s*(?:\(([^)]*)\)|([A-Za-z0-9.]+))/g)].some((m) => /[a-zA-Z]/.test(m[1] ?? m[2]))
+
+function parseExpr(raw: string, variables: string[], lift = true): MathNode | { error: string } {
   let s = tidy(raw).replace(/\.$/, '')
+  if (lift) s = liftStuckExponents(s, variables)
   if (s.includes('=')) s = s.slice(s.lastIndexOf('=') + 1)
   s = joinThousands(s).replace(/(\d),(\d)/g, '$1.$2')
   s = combinatorics(explicitMultiplication(s, variables))
@@ -286,7 +302,7 @@ function equivalent(a: MathNode, b: MathNode, variables: string[], integers: boo
 }
 
 export function checkExpression(a: ExpressionAnswer, raw: string): CheckResult {
-  const user = parseExpr(raw, a.variables)
+  const user = parseExpr(raw, a.variables, !hasVarExponent(a.value))
   if ('error' in user) return invalid(user.error)
   const target = math.parse(combinatorics(explicitMultiplication(a.value, a.variables)))
   const integers = a.value.includes('!') || raw.includes('!')
@@ -322,7 +338,8 @@ export function checkList(a: ListAnswer, raw: string): CheckResult {
   const items = splitList(raw)
   if (!items.length) return invalid('Skriv svaret, med kommatecken mellan delarna.')
   const targets = a.items.map((t) => math.parse(combinatorics(explicitMultiplication(t, vars))))
-  const parsed = items.map((it) => (vars.length ? parseExpr(it, vars) : parseNumber(it)))
+  const lift = !a.items.some(hasVarExponent)
+  const parsed = items.map((it) => (vars.length ? parseExpr(it, vars, lift) : parseNumber(it)))
   const bad = parsed.find((p) => 'error' in p)
   if (bad && 'error' in bad) return invalid(bad.error)
   const nodes = parsed.map((p) => ('value' in p ? math.parse(String(p.value)) : (p as MathNode)))

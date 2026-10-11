@@ -56,7 +56,7 @@ export function inputKind(a: Answer): { mode: 'math' | 'text' | 'buttons' | 'sel
     case 'set-expression':
       return { mode: 'text', symbols: ['∩', '∪', '\\', '∁', '(', ')', '∅'], placeholder: 't.ex. A ∩ (B ∪ C)' }
     case 'list':
-      return { mode: 'math', placeholder: 'Skilj delarna åt med kommatecken' }
+      return { mode: 'math', placeholder: 'Skilj talen åt med kommatecken eller mellanslag' }
     default:
       return { mode: 'math' }
   }
@@ -168,6 +168,13 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
     el.style.animation = ''
   }, [feedback?.key])
   const textMode = kind.mode === 'math' && settings.inputMode === 'text' ? 'text' : kind.mode
+  // Listor med uttryck (eller några få tal) får en ruta per del i stället för kommatecken i en ruta.
+  const answer = part.answer
+  const boxes = answer.type === 'list' && (answer.variables?.length || answer.items.length <= 4) ? answer.items.length : 0
+  const boxRefs = useRef<(MathInputHandle | null)[]>([])
+  const solvedParts = solvedInput?.split(';').map((x) => x.trim()) ?? []
+  const hasVariables = (answer.type === 'expression' || answer.type === 'list') && !!answer.variables?.length
+  const ordinal = (i: number) => `${i + 1}:${i === 0 || i === 1 ? 'a' : 'e'}`
 
   const save = (status: 'correct' | 'partial' | 'incorrect', input: string, self = false) => {
     setLog((l) => [...l, { input, status }])
@@ -184,7 +191,16 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
 
   const submit = (raw?: string) => {
     if (correct) return
-    const input = raw ?? field.current?.plain() ?? ''
+    let input = raw ?? field.current?.plain() ?? ''
+    if (raw === undefined && boxes) {
+      const parts = Array.from({ length: boxes }, (_, i) => boxRefs.current[i]?.plain().trim() ?? '')
+      if (parts.some((p) => !p)) {
+        setFeedback({ status: 'invalid', message: `Fyll i alla ${boxes} rutorna.`, key: Date.now() })
+        boxRefs.current[parts.findIndex((p) => !p)]?.focus()
+        return
+      }
+      input = parts.join('; ')
+    }
     const r = checkAnswer(part.answer, input)
     if (r.status === 'invalid') {
       setFeedback({ status: 'invalid', message: r.message, key: Date.now() })
@@ -262,7 +278,34 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
           )}
         </div>
       ) : (
-        <div className="ex-input-row">
+        <div className={`ex-input-row ${boxes ? 'multi' : ''}`}>
+          {boxes ? (
+            <div className="ex-boxes">
+              {Array.from({ length: boxes }, (_, i) => (
+                <label key={i} className="ex-box">
+                  <span>{answer.type === 'list' && answer.ordered ? `${ordinal(i)} ${hasVariables ? 'termen' : 'talet'}` : `${hasVariables ? 'Term' : 'Tal'} ${i + 1}`}</span>
+                  <div className="ex-input">
+                    <MathInput
+                      ref={(h) => {
+                        boxRefs.current[i] = h
+                      }}
+                      mode={textMode === 'text' ? 'text' : 'math'}
+                      initial={solvedParts[i] ?? ''}
+                      readOnly={correct}
+                      label={`Svar ${part.label ?? ''} del ${i + 1}`}
+                      onEnter={() => (i < boxes - 1 ? boxRefs.current[i + 1]?.focus() : submit())}
+                      onInput={() => feedback?.status === 'invalid' && setFeedback(null)}
+                    />
+                  </div>
+                </label>
+              ))}
+              {correct && (
+                <span className="ex-ok">
+                  <Check size={16} strokeWidth={3} />
+                </span>
+              )}
+            </div>
+          ) : (
           <div className="ex-input">
             <MathInput
               ref={field}
@@ -283,6 +326,7 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
             )}
             {correct && feedback?.status === 'correct' && <Burst />}
           </div>
+          )}
           {!correct && (
             <button className="ex-check" onClick={() => submit()}>
               Kontrollera
@@ -291,6 +335,7 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
         </div>
       )}
 
+      {hasVariables && textMode === 'math' && !correct && <p className="ex-exp-tip">Tips: tryck → (högerpil) för att komma ut ur en exponent.</p>}
       {feedback && <p className={`ex-msg ${feedback.status}`}>{feedback.message}</p>}
       {feedback?.hint && !correct && <p className="ex-msg tip">{feedback.hint}</p>}
       {part.motivation && correct && <p className="ex-msg info">Glöm inte motiveringen – jämför den med facit.</p>}
