@@ -53,7 +53,17 @@ export function validateExercise(ex: Exercise, opts: { figureExists?: (src: stri
     checkFigures(where, p.figures)
     checkFigures(where, p.facitFigures)
     for (const m of checkAnswer(p.answer)) err(where, m)
+    // En deluppgift med bokstav måste ha en text eller en egen figur – annars ser den ut att saknas.
+    if (p.label && !(p.prompt ?? '').trim() && !p.figures?.length && ex.parts.length > 1) err(where, 'deluppgiften är tom: lägg till text eller en figur till just den')
   })
+  // Bokstäverna ska komma i ordning: a, b, c …
+  const letters = ex.parts.map((p) => p.label).filter((l): l is string => !!l)
+  if (letters.length && letters.join('') !== 'abcdefghijklmnop'.slice(0, letters.length)) err(id, `deluppgifterna heter ${letters.join(', ')} – saknas någon?`)
+  // Texten nämner en figur eller tabell som inte finns.
+  const anyFigure = (ex.figures?.length ?? 0) + ex.parts.reduce((n, p) => n + (p.figures?.length ?? 0), 0)
+  const text = [ex.prompt, ...ex.parts.map((p) => p.prompt ?? '')].join(' ')
+  const mention = /figuren|venndiagrammet|tabellen|grafen|bilden/i.exec(text)
+  if (mention && !anyFigure) warn(id, `texten nämner ”${mention[0]}” men uppgiften har ingen figur`)
   return issues
 }
 
