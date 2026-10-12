@@ -334,6 +334,13 @@ export function splitList(raw: string): string[] {
 }
 
 export function checkList(a: ListAnswer, raw: string): CheckResult {
+  const res = checkListItems(a, raw)
+  if (res.status === 'correct' || res.status === 'invalid') return res
+  for (const items of a.alsoAccept ?? []) if (checkListItems({ ...a, items }, raw).status === 'correct') return ok()
+  return res
+}
+
+function checkListItems(a: ListAnswer, raw: string): CheckResult {
   const vars = a.variables ?? []
   const items = splitList(raw)
   if (!items.length) return invalid('Skriv svaret, med kommatecken mellan delarna.')
@@ -362,7 +369,7 @@ export function checkList(a: ListAnswer, raw: string): CheckResult {
   if (!a.ordered || matched < targets.length) {
     if (nodes.length !== targets.length) return wrong(`Facit har ${targets.length} delar – du har ${nodes.length}.`)
   }
-  if (a.ordered && !matched && checkList({ ...a, ordered: false }, raw).status === 'correct') return wrong('Rätt delar, men i fel ordning.')
+  if (a.ordered && !matched && checkListItems({ ...a, ordered: false }, raw).status === 'correct') return wrong('Rätt delar, men i fel ordning.')
   return wrong(matched ? `${matched} av ${targets.length} stämmer.` : undefined)
 }
 

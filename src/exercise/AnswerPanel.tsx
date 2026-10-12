@@ -326,7 +326,7 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
             <div className="ex-boxes">
               {Array.from({ length: boxes }, (_, i) => (
                 <label key={i} className="ex-box">
-                  <span>{answer.type === 'list' && answer.ordered ? `${ordinal(i)} ${hasVariables ? 'termen' : 'talet'}` : `${hasVariables ? 'Term' : 'Tal'} ${i + 1}`}</span>
+                  <span>{answer.type === 'list' && answer.labels?.[i] ? answer.labels[i] : answer.type === 'list' && answer.ordered ? `${ordinal(i)} ${hasVariables ? 'termen' : 'talet'}` : `${hasVariables ? 'Term' : 'Tal'} ${i + 1}`}</span>
                   <div className="ex-input">
                     <MathInput
                       ref={(h) => {

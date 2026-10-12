@@ -45,6 +45,10 @@ export interface ListAnswer {
   items: string[]
   ordered: boolean
   variables?: string[]
+  /** Namn på rutorna, t.ex. ["n", "k"], när delarna är olika storheter. */
+  labels?: string[]
+  /** Fler listor som också godkänns (t.ex. när det finns flera lösningar). */
+  alsoAccept?: string[][]
 }
 
 export interface InequalityAnswer {
