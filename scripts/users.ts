@@ -16,8 +16,9 @@ if (vault.version !== 2) throw new Error('Boken har det äldre formatet. Kör np
 if (cmd === 'count') {
   console.log(`Boken har ${vault.slots.length} ${vault.slots.length === 1 ? 'inloggning' : 'inloggningar'}.`)
 } else if (cmd === 'add') {
-  const me = await openWithLogin(vault)
-  console.log('\nVälj den nya inloggningen.')
+  console.log('\nSTEG 1 av 2: logga in med DITT konto (ett som redan finns, t.ex. ditt eget).')
+  const me = await openWithLogin(vault, 'ditt befintliga konto')
+  console.log('\nSTEG 2 av 2: skriv det NYA kontots användarnamn och lösenord.')
   const neu = await askNewLogin(false)
   const id = await slotId(neu.user)
   if (vault.slots.some((s) => s.id === id)) throw new Error(`Användarnamnet ”${neu.user}” finns redan. Ta bort det först om du vill byta lösenord.`)

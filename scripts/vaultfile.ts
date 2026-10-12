@@ -19,7 +19,8 @@ export async function openWithLogin(vault: Vault, prompt = 'en befintlig inloggn
   try {
     return { user, password, ...(await login(vault, user, password)) }
   } catch {
-    throw new Error('Fel användarnamn eller lösenord.')
+    console.error('\nFel användarnamn eller lösenord. Här loggar du in med ett konto som redan finns – inte det nya. Inget har ändrats.')
+    process.exit(1)
   }
 }
 
