@@ -112,7 +112,7 @@ export function Library() {
         <Row title="Avsnitt" variant="posters">
           {topics.map((e) => (
             <a key={`${e.section}${e.topic}`} className="mk-poster-btn" href={`#/kapitel/${e.chapter}?avsnitt=${encodeURIComponent(e.section)}&omrade=${encodeURIComponent(e.topic ?? '')}`}>
-              <Poster motif={motifFor(e.topic)} seed={`${e.section}-${e.topic}`} kicker={e.section.includes('.') ? e.section : 'Blandat'} title={e.topic ?? ''} />
+              <Poster motif={motifFor(e.topic)} seed={`${e.section}-${e.topic}`} kicker={e.section.includes('.') ? e.section : e.section.endsWith('blandade') ? 'Blandat' : `Kapitel ${e.chapter}`} title={e.topic ?? ''} />
             </a>
           ))}
         </Row>
@@ -259,7 +259,7 @@ function Hero({ ex, progress, total }: { ex: Exercise; progress: Progress; total
             <strong>
               {progress.solvedTotal} av {total}
             </strong>
-            <span>uppgifter klara i kapitel 1</span>
+            <span>uppgifter klara totalt</span>
           </div>
         </a>
       </div>

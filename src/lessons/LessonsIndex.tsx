@@ -43,7 +43,7 @@ export function LessonsIndex() {
       {sections.map((s) => (
         <section key={s.id} className="li-section">
           <h2>
-            {s.id} {s.title}
+            {s.id.includes('.') ? `${s.id} ${s.title}` : s.title}
           </h2>
           <div className="li-grid">
             {lessons

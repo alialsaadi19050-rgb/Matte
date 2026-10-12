@@ -70,7 +70,7 @@ export function StatsPage() {
             {progress.sections.map((s) => {
               const sec = content.sections.find((x) => x.section === s.section)!
               return (
-                <a key={s.section} className="stp-row" href={`#/kapitel/1?avsnitt=${encodeURIComponent(s.section)}`}>
+                <a key={s.section} className="stp-row" href={`#/kapitel/${sec.exercises[0]?.chapter ?? 1}?avsnitt=${encodeURIComponent(s.section)}`}>
                   <span className="stp-name">{sectionLabel(sec)}</span>
                   <span className="stp-bar">
                     <span style={{ width: `${(100 * s.solved) / s.total}%` }} />

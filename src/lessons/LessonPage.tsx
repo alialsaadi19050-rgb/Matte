@@ -65,7 +65,7 @@ export function LessonPage({ id }: { id: string }) {
       <article className="ls-article">
         <div className="ls-hero">
           <span className="ls-kicker">
-            {section ? `${section.id} ${section.title}` : lesson.section} · Genomgång
+            {section ? (section.id.includes(".") ? `${section.id} ${section.title}` : section.title) : lesson.section} · Genomgång
           </span>
           <h1>{lesson.title}</h1>
           <p className="ls-summary">{lesson.summary}</p>

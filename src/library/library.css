@@ -1097,3 +1097,24 @@ a.stp-row:hover {
 .mk-redo-start:hover {
   filter: brightness(1.08);
 }
+.ch-chapters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.ch-chapters a {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent-text);
+  text-decoration: none;
+}
+.ch-chapters a.on {
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.6);
+}

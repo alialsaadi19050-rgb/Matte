@@ -72,7 +72,17 @@ export function ChapterPage({ chapterId }: { chapterId: number }) {
         <div className="mk-hero-shade" />
         <div className="ch-hero-inner">
           <div>
-            <p className="mk-kicker">Kapitel {chapter.id}</p>
+            {content.index.chapters.length > 1 ? (
+              <nav className="ch-chapters" aria-label="Kapitel">
+                {content.index.chapters.map((c) => (
+                  <a key={c.id} className={c.id === chapter.id ? 'on' : ''} href={`#/kapitel/${c.id}`}>
+                    Kapitel {c.id}
+                  </a>
+                ))}
+              </nav>
+            ) : (
+              <p className="mk-kicker">Kapitel {chapter.id}</p>
+            )}
             <h1 className="ch-title">{chapter.title}</h1>
             <p className="mk-hero-lead">
               {solved} av {all.length} uppgifter klara · {progress.sections.filter((s) => chapter.sections.some((x) => x.id === s.section)).length} avsnitt
