@@ -1,8 +1,9 @@
 // Datamodellen för det du skriver. Allt lagras som vektorer i dokumentkoordinater
 // (1 enhet = 1 CSS-pixel vid 100 % zoom), så att det går att zooma och exportera skarpt.
 
-/** 'hand' flyttar runt på skrivytan (dra med musen eller pennan). */
-export type Tool = 'pen' | 'highlighter' | 'eraser' | 'lasso' | 'hand'
+/** 'hand' flyttar runt på skrivytan (dra med musen eller pennan). 'shape' ritar linjer, rektanglar och cirklar. */
+export type Tool = 'pen' | 'highlighter' | 'eraser' | 'lasso' | 'hand' | 'shape'
+export type ShapeKind = 'line' | 'rect' | 'ellipse'
 export type EraserMode = 'stroke' | 'partial'
 export type Background = 'grid' | 'lined' | 'blank'
 export type Paper = 'light' | 'dark'
@@ -24,6 +25,8 @@ export interface Stroke {
   size: number
   /** Trycket kom från pennan (annars simuleras det från hastigheten). */
   pressure: boolean
+  /** Ritat med formverktyget: jämn bredd och skarpa hörn, ingen utjämning. */
+  shape?: boolean
   points: Point[]
 }
 

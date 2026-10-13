@@ -22,6 +22,7 @@ export type ActionId =
   | 'calculator'
   | 'bookmark'
   | 'hand'
+  | 'shape'
 
 export const ACTIONS: { id: ActionId; label: string }[] = [
   { id: 'pen', label: 'Penna' },
@@ -29,6 +30,7 @@ export const ACTIONS: { id: ActionId; label: string }[] = [
   { id: 'eraser', label: 'Sudd' },
   { id: 'lasso', label: 'Markera och flytta' },
   { id: 'hand', label: 'Flytta runt på skrivytan (hand)' },
+  { id: 'shape', label: 'Former (linje, rektangel, cirkel)' },
   { id: 'eraserMode', label: 'Växla hela streck / delsudd' },
   { id: 'undo', label: 'Ångra' },
   { id: 'redo', label: 'Gör om' },
@@ -63,6 +65,7 @@ export const DEFAULT_SHORTCUTS: Record<ActionId, string> = {
   calculator: 'R',
   bookmark: 'B',
   hand: 'M',
+  shape: 'F',
 }
 
 /** Gaomon S620: aktiv yta 165 × 101 mm. */

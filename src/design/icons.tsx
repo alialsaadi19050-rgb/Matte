@@ -174,3 +174,24 @@ export const FitAll = (p: P) => (
     <rect x="8.5" y="8.5" width="7" height="7" rx="1" />
   </svg>
 )
+export const Shapes = (p: P) => (
+  <svg {...base(p)}>
+    <circle cx="8.5" cy="8.5" r="5" />
+    <rect x="11" y="11" width="9.5" height="9.5" rx="1" />
+  </svg>
+)
+export const ShapeLine = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M5 19 19 5" />
+  </svg>
+)
+export const ShapeRect = (p: P) => (
+  <svg {...base(p)}>
+    <rect x="4.5" y="6" width="15" height="12" rx="0.5" />
+  </svg>
+)
+export const ShapeEllipse = (p: P) => (
+  <svg {...base(p)}>
+    <ellipse cx="12" cy="12" rx="8" ry="6.5" />
+  </svg>
+)

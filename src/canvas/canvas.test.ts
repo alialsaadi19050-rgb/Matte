@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { eraseFromStroke, lassoSelects, strokeHit, translateStroke } from './geometry.ts'
+import { eraseFromStroke, lassoSelects, shapePoints, strokeHit, translateStroke } from './geometry.ts'
 import { History, StrokeStore } from './history.ts'
 import type { Stroke } from './types.ts'
 
@@ -90,5 +90,25 @@ describe('ångra och gör om', () => {
     expect(h.canRedo).toBe(true)
     h.commit({ removed: [], added: [line('b', 1, 0, 10)] })
     expect(h.canRedo).toBe(false)
+  })
+})
+
+describe('shapePoints', () => {
+  it('ritar en sluten rektangel med raka sidor', () => {
+    const pts = shapePoints('rect', [0, 0], [40, 20])
+    expect(pts[0].slice(0, 2)).toEqual([0, 0])
+    expect(pts[pts.length - 1].slice(0, 2)).toEqual([0, 0])
+    expect(pts.every(([x, y]) => x === 0 || x === 40 || y === 0 || y === 20)).toBe(true)
+  })
+  it('gör en kvadrat och en cirkel med Shift', () => {
+    const sq = shapePoints('rect', [0, 0], [40, -10], true)
+    expect(Math.max(...sq.map((p) => -p[1]))).toBe(40)
+    const c = shapePoints('ellipse', [0, 0], [30, 50], true)
+    for (const [x, y] of c) expect(Math.hypot(x - 25, y - 25)).toBeCloseTo(25, 1)
+  })
+  it('låser linjen till närmaste 15°', () => {
+    const l = shapePoints('line', [0, 0], [100, 4], true)
+    expect(l[l.length - 1][1]).toBe(0)
+    expect(l[l.length - 1][0]).toBeCloseTo(Math.hypot(100, 4), 1)
   })
 })

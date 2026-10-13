@@ -1,9 +1,9 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { InkCanvas, type InkStatus, type ToolState } from './InkCanvas.ts'
-import { HIGHLIGHT, INK, type Background, type HighlightColor, type InkColor, type Paper, type Stroke } from './types.ts'
+import { HIGHLIGHT, INK, type Background, type HighlightColor, type InkColor, type Paper, type ShapeKind, type Stroke } from './types.ts'
 import { loadDrawing, saveDrawing } from '../storage/db.ts'
 import { getSettings, updateSettings, useSettings } from '../settings/settings.ts'
-import { ChevronLeft, Download, Eraser, FitAll, Grid, Hand, Highlighter, Lasso, Pen, Redo, Undo } from '../design/icons.tsx'
+import { ChevronLeft, Download, Eraser, FitAll, Grid, Hand, Highlighter, Lasso, Pen, Redo, ShapeEllipse, ShapeLine, ShapeRect, Shapes, Undo } from '../design/icons.tsx'
 import './canvas.css'
 
 export interface InkSurfaceHandle {
@@ -28,6 +28,11 @@ interface Props {
 
 const INK_ORDER: InkColor[] = ['ink', 'blue', 'red', 'green']
 const HL_ORDER: HighlightColor[] = ['yellow', 'green', 'pink']
+const SHAPES: { id: ShapeKind; Icon: typeof ShapeLine; label: string }[] = [
+  { id: 'line', Icon: ShapeLine, label: 'Linje' },
+  { id: 'rect', Icon: ShapeRect, label: 'Rektangel' },
+  { id: 'ellipse', Icon: ShapeEllipse, label: 'Cirkel/ellips' },
+]
 const BACKGROUNDS: { id: Background; label: string }[] = [
   { id: 'grid', label: 'Rutat' },
   { id: 'lined', label: 'Linjerat' },
@@ -164,6 +169,7 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
               [
                 ['pen', Pen, 'Penna', settings.shortcuts.pen],
                 ['highlighter', Highlighter, 'Överstrykning', settings.shortcuts.highlighter],
+                ['shape', Shapes, 'Former: linje, rektangel och cirkel – håll in Shift för rak vinkel, kvadrat eller cirkel', settings.shortcuts.shape],
                 ['eraser', Eraser, 'Sudd – eller håll in pennans sidoknapp', settings.shortcuts.eraser],
                 ['lasso', Lasso, 'Markera och flytta', settings.shortcuts.lasso],
                 ['hand', Hand, 'Flytta runt på skrivytan – eller håll in mellanslag', settings.shortcuts.hand],
@@ -175,6 +181,16 @@ export const InkSurface = forwardRef<InkSurfaceHandle, Props>(function InkSurfac
             ))}
             <span className="ex-tools-sep" />
 
+            {tools.tool === 'shape' && (
+              <>
+                {SHAPES.map(({ id, Icon, label }) => (
+                  <button key={id} className={tools.shape === id ? 'on' : ''} onClick={() => applyTools({ shape: id })} aria-label={label} title={`${label} (Shift: ${id === 'line' ? 'rak vinkel' : id === 'rect' ? 'kvadrat' : 'cirkel'})`} aria-pressed={tools.shape === id}>
+                    <Icon size={19} />
+                  </button>
+                ))}
+                <span className="ex-tools-sep" />
+              </>
+            )}
             {tools.tool === 'highlighter'
               ? HL_ORDER.map((c) => (
                   <button key={c} className={`swatch ${tools.highlight === c ? 'on' : ''}`} onClick={() => applyTools({ highlight: c })} aria-label={`Överstrykning ${c}`}>

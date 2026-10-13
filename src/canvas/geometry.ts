@@ -1,5 +1,5 @@
 // Geometri för sudd, lasso och utsnitt. Rena funktioner utan DOM.
-import type { Box, Point, Stroke } from './types.ts'
+import type { Box, Point, ShapeKind, Stroke } from './types.ts'
 
 export function strokeBox(s: Stroke): Box {
   let minX = Infinity
@@ -103,3 +103,50 @@ export const translateStroke = (s: Stroke, dx: number, dy: number): Stroke => ({
 })
 
 export const round = (v: number, d = 100) => Math.round(v * d) / d
+
+/**
+ * Punkterna för en form från a till b. Med `exact` blir rektangeln en kvadrat, ellipsen
+ * en cirkel och linjen låses till närmaste 15°. Tätt mellan punkterna, så att suddet
+ * kan ta bort en bit av en form precis som av ett vanligt streck.
+ */
+export function shapePoints(kind: ShapeKind, a: [number, number], b: [number, number], exact = false): Point[] {
+  let [x1, y1] = b
+  const [x0, y0] = a
+  if (exact) {
+    const dx = x1 - x0
+    const dy = y1 - y0
+    if (kind === 'line') {
+      const len = Math.hypot(dx, dy)
+      const ang = Math.round(Math.atan2(dy, dx) / (Math.PI / 12)) * (Math.PI / 12)
+      x1 = x0 + len * Math.cos(ang)
+      y1 = y0 + len * Math.sin(ang)
+    } else {
+      const side = Math.max(Math.abs(dx), Math.abs(dy))
+      x1 = x0 + side * (dx < 0 ? -1 : 1)
+      y1 = y0 + side * (dy < 0 ? -1 : 1)
+    }
+  }
+  const STEP = 4
+  const pt = (x: number, y: number): Point => [round(x), round(y), 0.5]
+  const segment = (ax: number, ay: number, bx: number, by: number, last: boolean): Point[] => {
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / STEP))
+    const out: Point[] = []
+    for (let i = 0; i < (last ? n + 1 : n); i++) out.push(pt(ax + ((bx - ax) * i) / n, ay + ((by - ay) * i) / n))
+    return out
+  }
+  if (kind === 'line') return segment(x0, y0, x1, y1, true)
+  if (kind === 'rect') {
+    return [...segment(x0, y0, x1, y0, false), ...segment(x1, y0, x1, y1, false), ...segment(x1, y1, x0, y1, false), ...segment(x0, y1, x0, y0, true)]
+  }
+  const cx = (x0 + x1) / 2
+  const cy = (y0 + y1) / 2
+  const rx = Math.abs(x1 - x0) / 2
+  const ry = Math.abs(y1 - y0) / 2
+  const n = Math.max(24, Math.ceil((Math.PI * (rx + ry)) / STEP))
+  const out: Point[] = []
+  for (let i = 0; i <= n; i++) {
+    const t = (i / n) * 2 * Math.PI - Math.PI / 2
+    out.push(pt(cx + rx * Math.cos(t), cy + ry * Math.sin(t)))
+  }
+  return out
+}

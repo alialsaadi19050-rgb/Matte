@@ -17,7 +17,8 @@ export const PAPER: Record<Paper, { bg: string; line: string; strong: string; pa
 export const GRID = 26
 export const LINE_GAP = 34
 
-function freehandOptions(s: Pick<Stroke, 'tool' | 'size' | 'pressure'>, last: boolean) {
+function freehandOptions(s: Pick<Stroke, 'tool' | 'size' | 'pressure' | 'shape'>, last: boolean) {
+  if (s.shape) return { size: s.size, thinning: 0, smoothing: 0, streamline: 0, simulatePressure: false, last: true, start: { cap: true }, end: { cap: true } }
   if (s.tool === 'highlighter') {
     return { size: s.size, thinning: 0, smoothing: 0.6, streamline: 0.5, simulatePressure: false, last, start: { cap: true }, end: { cap: true } }
   }
@@ -49,7 +50,7 @@ export function outlineToPath(outline: number[][]): Path2D {
   return path
 }
 
-export function strokePath(s: Pick<Stroke, 'tool' | 'size' | 'pressure' | 'points'>, last = true): Path2D {
+export function strokePath(s: Pick<Stroke, 'tool' | 'size' | 'pressure' | 'points' | 'shape'>, last = true): Path2D {
   const pts = s.points.length === 1 ? [s.points[0], [s.points[0][0] + 0.1, s.points[0][1] + 0.1, s.points[0][2]] as Point] : s.points
   return outlineToPath(getStroke(pts, freehandOptions(s, last)))
 }

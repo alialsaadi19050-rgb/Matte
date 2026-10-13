@@ -4,10 +4,10 @@
 // Medan du skriver kopieras bufferten till skärmen och bara det pågående strecket
 // ritas ovanpå. Skärm-canvasen är ”desynchronized”, vilket låter webbläsaren visa
 // pixlarna utan att vänta på nästa bildruta.
-import { boxesOverlap, eraseFromStroke, lassoSelects, round, strokeBox, strokeHit, translateStroke, unionBox } from './geometry.ts'
+import { boxesOverlap, eraseFromStroke, lassoSelects, round, shapePoints, strokeBox, strokeHit, translateStroke, unionBox } from './geometry.ts'
 import { History, StrokeStore, type Change } from './history.ts'
 import { cachedPath, drawBackground, drawStroke, strokeColor, strokePath, type View } from './render.ts'
-import type { Background, Box, EraserMode, HighlightColor, InkColor, Paper, Point, Stroke, Tool } from './types.ts'
+import type { Background, Box, EraserMode, HighlightColor, InkColor, Paper, Point, ShapeKind, Stroke, Tool } from './types.ts'
 import { ERASER_SIZES, HIGHLIGHTER_SIZES, PEN_SIZES } from './types.ts'
 
 /** Hur långt du kan zooma ut på den obegränsade skrivytan. */
@@ -21,6 +21,8 @@ export interface ToolState {
   highlighterSize: number
   eraserSize: number
   eraserMode: EraserMode
+  /** Vilken form formverktyget ritar. */
+  shape: ShapeKind
 }
 
 export const DEFAULT_TOOLS: ToolState = {
@@ -31,6 +33,7 @@ export const DEFAULT_TOOLS: ToolState = {
   highlighterSize: 1,
   eraserSize: 1,
   eraserMode: 'stroke',
+  shape: 'line',
 }
 
 export interface InkStatus {
@@ -52,6 +55,7 @@ export interface InkCallbacks {
 
 type Action =
   | { kind: 'draw'; stroke: Stroke; pointerId: number; predicted: Point[] }
+  | { kind: 'shape'; stroke: Stroke; pointerId: number; start: [number, number]; end: [number, number] }
   | { kind: 'erase'; pointerId: number; last: [number, number]; mode: EraserMode; radius: number; removed: Map<string, Stroke>; added: Map<string, Stroke> }
   | { kind: 'lasso'; pointerId: number; poly: [number, number][] }
   | { kind: 'move'; pointerId: number; start: [number, number]; delta: [number, number] }
@@ -334,6 +338,8 @@ export class InkCanvas {
       const s = a.stroke
       const live = { ...s, points: a.predicted.length ? [...s.points, ...a.predicted] : s.points }
       drawStroke(ctx, s, this.paper, strokePath(live, false))
+    } else if (a.kind === 'shape') {
+      if (a.stroke.points.length > 1) drawStroke(ctx, a.stroke, this.paper, strokePath(a.stroke))
     } else if (a.kind === 'lasso' && a.poly.length > 1) {
       const accent = getComputedStyle(this.root).getPropertyValue('--accent').trim() || '#ff6a2b'
       ctx.strokeStyle = accent
@@ -380,7 +386,7 @@ export class InkCanvas {
     const z = this.view.zoom
     let d = 6
     let color = 'currentColor'
-    if (tool === 'pen') {
+    if (tool === 'pen' || tool === 'shape') {
       d = Math.max(4, PEN_SIZES[this.tools.penSize] * z)
       color = strokeColor({ tool: 'pen', color: this.tools.color }, this.paper)
     } else if (tool === 'highlighter') {
@@ -496,6 +502,20 @@ export class InkCanvas {
       this.action = { kind: 'draw', stroke, pointerId: e.pointerId, predicted: [] }
       if (this.selection.size) this.clearSelection()
       this.present()
+    } else if (tool === 'shape') {
+      if (e.button !== 0) return
+      const stroke: Stroke = {
+        id: newId(),
+        z: this.store.nextZ(),
+        tool: 'pen',
+        color: this.tools.color,
+        size: PEN_SIZES[this.tools.penSize],
+        pressure: false,
+        shape: true,
+        points: [],
+      }
+      this.action = { kind: 'shape', stroke, pointerId: e.pointerId, start: p, end: p }
+      if (this.selection.size) this.clearSelection()
     } else if (tool === 'eraser') {
       this.action = {
         kind: 'erase',
@@ -584,6 +604,12 @@ export class InkCanvas {
       this.present()
       return
     }
+    if (a.kind === 'shape') {
+      a.end = this.toDoc(e.clientX, e.clientY)
+      a.stroke = { ...a.stroke, points: shapePoints(this.tools.shape, a.start, a.end, e.shiftKey) }
+      this.present()
+      return
+    }
     if (a.kind === 'erase') {
       for (const ev of list) {
         const p = this.toDoc(ev.clientX, ev.clientY)
@@ -614,7 +640,15 @@ export class InkCanvas {
     this.action = null
     if (this.el.hasPointerCapture(e.pointerId)) this.el.releasePointerCapture(e.pointerId)
 
-    if (a.kind === 'draw' && !cancelled) {
+    if (a.kind === 'shape') {
+      const [dx, dy] = [a.end[0] - a.start[0], a.end[1] - a.start[1]]
+      // Ett klick utan att dra blir ingen form.
+      if (!cancelled && Math.hypot(dx, dy) * this.view.zoom > 3 && a.stroke.points.length > 1) {
+        // Formen sparas precis som den syntes medan du drog.
+        this.history.commit({ removed: [], added: [a.stroke] })
+        this.afterChange()
+      } else this.invalidate()
+    } else if (a.kind === 'draw' && !cancelled) {
       this.history.commit({ removed: [], added: [a.stroke] })
       this.checkPressure()
       this.afterChange()
