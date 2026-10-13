@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { liveQuery } from 'dexie'
 import type { Exercise } from '../content/types.ts'
-import { db, type Attempt } from '../storage/db.ts'
+import { db, resolveOverrides, type Attempt } from '../storage/db.ts'
 import type { Drawing } from '../canvas/types.ts'
 
 export type Status = 'new' | 'attempted' | 'correct' | 'missed'
@@ -57,6 +57,7 @@ const startOfDay = (t: number) => {
 
 /** Ren funktion så att den går att testa. */
 export function computeProgress(exercises: Exercise[], attempts: Attempt[], drawings: Pick<Drawing, 'exerciseId' | 'strokes' | 'updatedAt'>[], now = Date.now()): Progress {
+  attempts = resolveOverrides(attempts)
   const byEx = new Map<string, Attempt[]>()
   for (const a of attempts) {
     const list = byEx.get(a.exerciseId) ?? []

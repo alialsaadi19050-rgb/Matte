@@ -21,6 +21,8 @@ export interface Attempt {
   self: boolean
   /** Bokens ledtråd var öppen. */
   hintUsed: boolean
+  /** ”Jag hade rätt”: uid för ett försök som rättades som fel men egentligen var rätt. */
+  overrides?: string
   at: number
 }
 
@@ -65,14 +67,26 @@ export async function saveDrawing(d: Drawing): Promise<void> {
   markDirty('doc', `drawing:${d.exerciseId}`)
 }
 
-export async function recordAttempt(a: Omit<Attempt, 'id' | 'at' | 'uid'>): Promise<void> {
+export async function recordAttempt(a: Omit<Attempt, 'id' | 'at' | 'uid'>): Promise<string> {
   const uid = crypto.randomUUID()
   await db.attempts.add({ ...a, uid, at: Date.now() })
   markDirty('attempt', uid)
+  return uid
+}
+
+/**
+ * Tillämpar ”Jag hade rätt”. Försöket som rättades som fel räknas som rätt (även på
+ * första försöket), och själva markeringen försvinner ur listan. Försök ändras aldrig
+ * i databasen, så det här synkas som ett vanligt nytt försök.
+ */
+export function resolveOverrides(attempts: Attempt[]): Attempt[] {
+  const overridden = new Set(attempts.flatMap((a) => (a.overrides ? [a.overrides] : [])))
+  if (!overridden.size) return attempts
+  return attempts.filter((a) => !a.overrides).map((a) => (a.uid && overridden.has(a.uid) ? { ...a, status: 'correct' as const } : a))
 }
 
 export async function attemptsFor(exerciseId: string): Promise<Attempt[]> {
-  return db.attempts.where('exerciseId').equals(exerciseId).sortBy('at')
+  return resolveOverrides(await db.attempts.where('exerciseId').equals(exerciseId).sortBy('at'))
 }
 
 /** Försöken i den pågående omgången: allt efter den senaste ”gör om”-markören. */

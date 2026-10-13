@@ -88,3 +88,13 @@ describe('gör om', () => {
     expect(p.accuracy).toBe(0.5)
   })
 })
+
+describe('jag hade rätt', () => {
+  it('ett felrättat försök räknas som rätt på första försöket', () => {
+    const wrong = { ...at('1', 0, 'incorrect', NOW - 10), uid: 'w1' }
+    const fix: Attempt = { ...at('1', 0, 'correct', NOW, true), uid: 'o1', overrides: 'w1' }
+    const p = computeProgress([ex('1')], [wrong, fix], [], NOW)
+    expect(p.byExercise['1']).toMatchObject({ status: 'correct', wrong: 0, needsRedo: false })
+    expect(p.accuracy).toBe(1)
+  })
+})

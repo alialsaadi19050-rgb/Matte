@@ -157,6 +157,12 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
   const [askOpen, setAskOpen] = useState(false)
   const facitMax = useMaximize()
   const [log, setLog] = useState(() => previous.map((a) => ({ input: a.input, status: a.status })))
+  /** Senaste felrättade försöket – det som ”Jag hade rätt” godkänner. */
+  const [lastWrong, setLastWrong] = useState<{ uid: string; input: string } | null>(() => {
+    if (lastCorrect) return null
+    const w = previous.findLast((a) => a.status === 'incorrect' || a.status === 'partial')
+    return w?.uid ? { uid: w.uid, input: w.input } : null
+  })
   const field = useRef<MathInputHandle>(null)
   const box = useRef<HTMLDivElement>(null)
   const correct = solvedInput !== null
@@ -189,7 +195,24 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
   const save = (status: 'correct' | 'partial' | 'incorrect', input: string, self = false) => {
     setLog((l) => [...l, { input, status }])
     onAttempt()
-    return recordAttempt({ exerciseId: ex.id, part: index, label: part.label, input, status, self, hintUsed: showHint })
+    return recordAttempt({ exerciseId: ex.id, part: index, label: part.label, input, status, self, hintUsed: showHint }).then((uid) => {
+      if (status !== 'correct') setLastWrong({ uid, input })
+    })
+  }
+
+  /** Rättningen sa fel, men du vet att du hade rätt (t.ex. skrev svaret på ett annat sätt). */
+  const overrule = () => {
+    const w = lastWrong
+    if (!w || correct) return
+    setLastWrong(null)
+    setLog((l) => {
+      const i = l.findLastIndex((x) => x.status === 'incorrect' || x.status === 'partial')
+      return i < 0 ? l : l.map((x, j) => (j === i ? { ...x, status: 'correct' } : x))
+    })
+    setTries((t) => Math.max(0, t - 1))
+    onAttempt()
+    void recordAttempt({ exerciseId: ex.id, part: index, label: part.label, input: w.input, status: 'correct', self: true, hintUsed: showHint, overrides: w.uid })
+    succeed(w.input, 'Okej, ditt svar räknas som rätt.')
   }
 
   const succeed = (input: string, message: string) => {
@@ -383,6 +406,11 @@ function AnswerField({ ex, index, part, previous, onSolved, onAttempt }: { ex: E
       {hasVariables && textMode === 'math' && !correct && <p className="ex-exp-tip">Tips: tryck → (högerpil) för att komma ut ur en exponent.</p>}
       {feedback && <p className={`ex-msg ${feedback.status}`}>{feedback.message}</p>}
       {feedback?.hint && !correct && <p className="ex-msg tip">{feedback.hint}</p>}
+      {lastWrong && !correct && (
+        <button className="ex-overrule" onClick={overrule} title="Rättningen sa fel, men ditt svar var rätt (t.ex. skrivet på ett annat sätt). Räknas som rätt.">
+          <Check size={14} strokeWidth={3} /> Jag hade rätt
+        </button>
+      )}
       {part.motivation && correct && <p className="ex-msg info">Glöm inte motiveringen – jämför den med facit.</p>}
 
       <div className="ex-field-tools">
